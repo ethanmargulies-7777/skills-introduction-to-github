@@ -8,6 +8,7 @@ Usage:
     DB_PATH=/path/to/ats_tracker.db python ats_tracker/generate_dashboard.py
 """
 
+import json
 import os
 import shutil
 import sqlite3
@@ -88,6 +89,23 @@ def query_filings_count_30d(conn: sqlite3.Connection) -> int:
         return 0
 
 
+def query_filings_by_day(conn: sqlite3.Connection) -> list:
+    """COUNT filings GROUP BY filed_date for past 30 days."""
+    from datetime import timedelta
+    cutoff = (date.today() - timedelta(days=30)).isoformat()
+    sql = """
+        SELECT filed_date, COUNT(*) AS count
+        FROM ats_filings
+        WHERE filed_date >= ?
+        GROUP BY filed_date
+        ORDER BY filed_date ASC
+    """
+    try:
+        return rows_to_dicts(conn.execute(sql, (cutoff,)).fetchall())
+    except sqlite3.OperationalError:
+        return []
+
+
 def query_finra_top10(conn: sqlite3.Connection) -> list:
     """Top 10 rows by shares_traded across all data."""
     sql = """
@@ -107,6 +125,70 @@ def query_finra_top10(conn: sqlite3.Connection) -> list:
         return rows_to_dicts(conn.execute(sql).fetchall())
     except sqlite3.OperationalError:
         return []
+
+
+def query_finra_wow_and_share(conn: sqlite3.Connection) -> dict:
+    """
+    For each (filer_id, symbol) pair, get the two most recent week_ending dates
+    and compute WoW % change and market share.
+    Returns a dict keyed by (ats_name, symbol, week_ending) -> {wow, mkt_share}.
+    """
+    # Get all volume data for the top-10 relevant ats+symbol combos
+    sql_all = """
+        SELECT
+            af.ats_name,
+            fv.filer_id,
+            fv.symbol,
+            fv.week_ending,
+            fv.shares_traded
+        FROM finra_ats_volume fv
+        JOIN ats_filers af ON af.id = fv.filer_id
+        ORDER BY fv.filer_id, fv.symbol, fv.week_ending DESC
+    """
+    # Total shares per week across all ATSs
+    sql_total = """
+        SELECT week_ending, SUM(shares_traded) AS total_shares
+        FROM finra_ats_volume
+        GROUP BY week_ending
+    """
+    result = {}
+    try:
+        rows = rows_to_dicts(conn.execute(sql_all).fetchall())
+        totals = {r["week_ending"]: r["total_shares"] for r in rows_to_dicts(conn.execute(sql_total).fetchall())}
+
+        # Group by (filer_id, symbol)
+        from collections import defaultdict
+        grouped = defaultdict(list)
+        for r in rows:
+            key = (r["filer_id"], r["symbol"])
+            grouped[key].append(r)
+
+        for key, rlist in grouped.items():
+            # Already sorted DESC by week_ending
+            if len(rlist) >= 2:
+                current = rlist[0]
+                prior = rlist[1]
+                prior_shares = prior["shares_traded"] or 0
+                cur_shares = current["shares_traded"] or 0
+                if prior_shares and prior_shares != 0:
+                    wow = (cur_shares - prior_shares) / prior_shares * 100
+                else:
+                    wow = None
+            else:
+                current = rlist[0]
+                wow = None
+
+            cur_shares = current["shares_traded"] or 0
+            week = current["week_ending"]
+            total = totals.get(week) or 0
+            mkt_share = (cur_shares / total * 100) if total else None
+
+            result_key = (current["ats_name"], current["symbol"], week)
+            result[result_key] = {"wow": wow, "mkt_share": mkt_share}
+
+    except sqlite3.OperationalError:
+        pass
+    return result
 
 
 def query_filers_with_volume(conn: sqlite3.Connection) -> list:
@@ -145,11 +227,82 @@ def query_filers_with_volume(conn: sqlite3.Connection) -> list:
         return []
 
 
+def query_filers_volume_wow_share(conn: sqlite3.Connection) -> dict:
+    """
+    For filers_with_volume cross-reference table: compute WoW and market share
+    at the ATS level (aggregate across all symbols for that filer's latest week).
+    Returns dict keyed by ats_name -> {wow, mkt_share}.
+    """
+    sql_by_filer_week = """
+        SELECT
+            af.ats_name,
+            fv.filer_id,
+            fv.week_ending,
+            SUM(fv.shares_traded) AS shares
+        FROM finra_ats_volume fv
+        JOIN ats_filers af ON af.id = fv.filer_id
+        GROUP BY fv.filer_id, fv.week_ending
+        ORDER BY fv.filer_id, fv.week_ending DESC
+    """
+    sql_total = """
+        SELECT week_ending, SUM(shares_traded) AS total_shares
+        FROM finra_ats_volume
+        GROUP BY week_ending
+    """
+    result = {}
+    try:
+        rows = rows_to_dicts(conn.execute(sql_by_filer_week).fetchall())
+        totals = {r["week_ending"]: r["total_shares"] for r in rows_to_dicts(conn.execute(sql_total).fetchall())}
+
+        from collections import defaultdict
+        grouped = defaultdict(list)
+        for r in rows:
+            grouped[r["filer_id"]].append(r)
+
+        for fid, rlist in grouped.items():
+            if len(rlist) >= 2:
+                current = rlist[0]
+                prior = rlist[1]
+                prior_s = prior["shares"] or 0
+                cur_s = current["shares"] or 0
+                wow = (cur_s - prior_s) / prior_s * 100 if prior_s else None
+            else:
+                current = rlist[0]
+                wow = None
+                cur_s = current["shares"] or 0
+
+            week = current["week_ending"]
+            total = totals.get(week) or 0
+            mkt_share = (cur_s / total * 100) if total else None
+            result[current["ats_name"]] = {"wow": wow, "mkt_share": mkt_share}
+    except sqlite3.OperationalError:
+        pass
+    return result
+
+
 def query_finra_count(conn: sqlite3.Connection) -> int:
     try:
         return conn.execute("SELECT COUNT(*) FROM finra_ats_volume").fetchone()[0]
     except sqlite3.OperationalError:
         return 0
+
+
+def query_finra_bar_chart_data(conn: sqlite3.Connection) -> list:
+    """Top 10 ATSs by total shares aggregated across all symbols/weeks."""
+    sql = """
+        SELECT
+            af.ats_name,
+            SUM(fv.shares_traded) AS total_shares
+        FROM finra_ats_volume fv
+        JOIN ats_filers af ON af.id = fv.filer_id
+        GROUP BY fv.filer_id
+        ORDER BY total_shares DESC
+        LIMIT 10
+    """
+    try:
+        return rows_to_dicts(conn.execute(sql).fetchall())
+    except sqlite3.OperationalError:
+        return []
 
 
 def query_market_data_latest(conn: sqlite3.Connection) -> list:
@@ -207,6 +360,27 @@ def query_market_data_latest(conn: sqlite3.Connection) -> list:
         return []
 
 
+def query_all_market_data(conn: sqlite3.Connection) -> list:
+    """All rows for all tickers ordered by date (last 30 days)."""
+    from datetime import timedelta
+    cutoff = (date.today() - timedelta(days=30)).isoformat()
+    sql = """
+        SELECT
+            af.parent_ticker AS ticker,
+            pmd.date,
+            pmd.close
+        FROM parent_market_data pmd
+        JOIN ats_filers af ON af.id = pmd.filer_id
+        WHERE af.parent_ticker IS NOT NULL
+          AND pmd.date >= ?
+        ORDER BY pmd.date ASC
+    """
+    try:
+        return rows_to_dicts(conn.execute(sql, (cutoff,)).fetchall())
+    except sqlite3.OperationalError:
+        return []
+
+
 def query_market_data_count(conn: sqlite3.Connection) -> int:
     try:
         return conn.execute("SELECT COUNT(*) FROM parent_market_data").fetchone()[0]
@@ -235,6 +409,29 @@ def fmt_mktcap(v):
     if v >= 1e6:
         return f"${v/1e6:.0f}M"
     return f"${v:,.0f}"
+
+
+def fmt_wow(wow) -> str:
+    """Format WoW % change as '+12.3%' or '-8.1%' or '—'."""
+    if wow is None:
+        return "—"
+    sign = "+" if wow >= 0 else ""
+    return f"{sign}{wow:.1f}%"
+
+
+def wow_html(wow) -> str:
+    """Return colored HTML span for WoW change."""
+    if wow is None:
+        return '<span style="color:var(--muted)">—</span>'
+    text = fmt_wow(wow)
+    cls = "pos" if wow >= 0 else "neg"
+    return f'<span class="{cls}">{text}</span>'
+
+
+def fmt_mkt_share(mkt_share) -> str:
+    if mkt_share is None:
+        return "—"
+    return f"{mkt_share:.1f}%"
 
 
 def badge_form_type(ft: str) -> str:
@@ -292,24 +489,34 @@ def build_filings_rows(filings: list) -> str:
     return "\n".join(rows)
 
 
-def build_finra_rows(rows: list) -> str:
+def build_finra_rows(rows: list, wow_share: dict) -> str:
     if not rows:
         return (
-            '<tr><td colspan="5" class="empty-cell">'
+            '<tr><td colspan="7" class="empty-cell">'
             'No FINRA volume data available</td></tr>'
         )
     out = []
     highlight_ats = {"UBS ATS", "Sigma X2"}
     for r in rows:
         ats = r.get("ats_name") or "—"
+        symbol = r.get("symbol") or "—"
+        week = r.get("week_ending") or "—"
         style = ' style="border-left: 3px solid #00C6FF;"' if ats in highlight_ats else ""
+
+        lookup_key = (ats, symbol, week)
+        metrics = wow_share.get(lookup_key, {})
+        wow = metrics.get("wow")
+        mkt_share = metrics.get("mkt_share")
+
         out.append(f"""
           <tr{style}>
             <td class="td-name">{ats}</td>
-            <td class="td-mono">{r.get('symbol') or '—'}</td>
-            <td class="td-mono">{r.get('week_ending') or '—'}</td>
+            <td class="td-mono">{symbol}</td>
+            <td class="td-mono">{week}</td>
             <td class="td-num">{fmt_shares(r.get('shares_traded'))}</td>
             <td class="td-num">{fmt_shares(r.get('trades'))}</td>
+            <td class="td-num">{wow_html(wow)}</td>
+            <td class="td-num">{fmt_mkt_share(mkt_share)}</td>
           </tr>""")
     return "\n".join(out)
 
@@ -349,10 +556,10 @@ def build_market_rows(rows: list) -> str:
     return "\n".join(out)
 
 
-def build_filers_volume_rows(rows: list) -> str:
+def build_filers_volume_rows(rows: list, filer_wow_share: dict) -> str:
     if not rows:
         return (
-            '<tr><td colspan="7" class="empty-cell">'
+            '<tr><td colspan="9" class="empty-cell">'
             'No filing activity in the last 30 days</td></tr>'
         )
     out = []
@@ -360,19 +567,27 @@ def build_filers_volume_rows(rows: list) -> str:
         shares = r.get("total_shares") or 0
         trades = r.get("total_trades") or 0
         ticker = r.get("parent_ticker") or ""
+        ats_name = r.get("ats_name") or "—"
         ticker_html = f'<span class="ticker-pill">{ticker}</span>' if ticker else "—"
         volume_html = fmt_shares(shares) if shares else '<span class="muted-cell">No FINRA data</span>'
         trades_html = fmt_shares(trades) if trades else "—"
         week_html   = r.get("latest_week") or "—"
+
+        metrics = filer_wow_share.get(ats_name, {})
+        wow = metrics.get("wow")
+        mkt_share = metrics.get("mkt_share")
+
         out.append(f"""
           <tr>
-            <td class="td-name">{r.get('ats_name') or '—'}</td>
+            <td class="td-name">{ats_name}</td>
             <td><span class="mpid-badge">{r.get('ats_mpid') or '—'}</span></td>
             <td>{ticker_html}</td>
             <td style="text-align:center">{r.get('filings_30d') or 0}</td>
             <td class="td-mono">{r.get('latest_filing') or '—'}</td>
             <td class="td-num">{volume_html}</td>
             <td class="td-num">{trades_html}</td>
+            <td class="td-num">{wow_html(wow)}</td>
+            <td class="td-num">{fmt_mkt_share(mkt_share)}</td>
           </tr>""")
     return "\n".join(out)
 
@@ -398,6 +613,37 @@ def build_registry_cards(filers: list) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Chart data builders
+# ---------------------------------------------------------------------------
+
+def build_finra_chart_json(bar_data: list) -> str:
+    """Build JSON for horizontal bar chart (top 10 ATSs by total shares)."""
+    labels = [r["ats_name"] for r in bar_data]
+    values = [int(r["total_shares"] or 0) for r in bar_data]
+    return json.dumps({"labels": labels, "values": values})
+
+
+def build_price_chart_json(all_market: list) -> str:
+    """Build JSON for multi-line price chart per ticker."""
+    tickers = ["GS", "JPM", "MS", "UBS", "VIRT"]
+    # Collect all dates
+    date_set = sorted(set(r["date"] for r in all_market))
+    # Build per-ticker series
+    series = {}
+    for t in tickers:
+        price_map = {r["date"]: r["close"] for r in all_market if r["ticker"] == t}
+        series[t] = [price_map.get(d) for d in date_set]
+    return json.dumps({"dates": date_set, "series": series})
+
+
+def build_filings_chart_json(filings_by_day: list) -> str:
+    """Build JSON for vertical bar chart of filings per day."""
+    labels = [r["filed_date"] for r in filings_by_day]
+    values = [r["count"] for r in filings_by_day]
+    return json.dumps({"labels": labels, "values": values})
+
+
+# ---------------------------------------------------------------------------
 # Full HTML
 # ---------------------------------------------------------------------------
 
@@ -409,11 +655,16 @@ def build_html(
     filers_volume: list,
     stats: dict,
     generated_at: str,
+    wow_share: dict,
+    filer_wow_share: dict,
+    finra_bar_data: list,
+    all_market_data: list,
+    filings_by_day: list,
 ) -> str:
     filings_rows       = build_filings_rows(filings)
-    finra_rows         = build_finra_rows(finra_top10)
+    finra_rows         = build_finra_rows(finra_top10, wow_share)
     market_rows        = build_market_rows(market_data)
-    filers_volume_rows = build_filers_volume_rows(filers_volume)
+    filers_volume_rows = build_filers_volume_rows(filers_volume, filer_wow_share)
     registry_html      = build_registry_cards(filers)
 
     n_filers       = stats["n_filers"]
@@ -421,12 +672,21 @@ def build_html(
     n_finra        = stats["n_finra"]
     n_market       = stats["n_market"]
 
+    finra_chart_json    = build_finra_chart_json(finra_bar_data)
+    price_chart_json    = build_price_chart_json(all_market_data)
+    filings_chart_json  = build_filings_chart_json(filings_by_day)
+
+    finra_chart_display    = "" if finra_bar_data else "display:none"
+    price_chart_display    = "" if all_market_data else "display:none"
+    filings_chart_display  = "" if filings_by_day else "display:none"
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ATS Tracker — Mosaic Platforms</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <style>
 *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
 
@@ -725,6 +985,15 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
   padding: 1px 6px;
 }}
 
+/* ===== CHART CARD ===== */
+.chart-card {{
+  background: #0f1e38;
+  border: 1px solid #1e3060;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 14px;
+}}
+
 /* ===== FOOTER ===== */
 .footer {{
   margin-top: 40px;
@@ -787,13 +1056,19 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
     </div>
   </div>
 
-  <!-- ===== EDGAR FILINGS TABLE ===== -->
+  <!-- ===== EDGAR FILINGS SECTION ===== -->
   <div class="section">
     <div class="section-hdr">
       <h2>EDGAR Filings</h2>
       <div class="section-rule"></div>
       <div class="section-count">{len(filings)} rows &nbsp;/&nbsp; last 30 days</div>
     </div>
+
+    <!-- Chart 3: Filing Activity by Day -->
+    <div class="chart-card" id="filingsChartCard" style="{filings_chart_display}">
+      <canvas id="filingsChart" height="180"></canvas>
+    </div>
+
     <div class="table-card">
       <div class="table-scroll">
         <table>
@@ -832,6 +1107,8 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
               <th>Latest Filing</th>
               <th style="text-align:right">Weekly Shares</th>
               <th style="text-align:right">Weekly Trades</th>
+              <th style="text-align:right">WoW Change</th>
+              <th style="text-align:right">Mkt Share %</th>
             </tr>
           </thead>
           <tbody>
@@ -851,6 +1128,12 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
         <h2>FINRA Volume — Top 10 by Shares</h2>
         <div class="section-rule"></div>
       </div>
+
+      <!-- Chart 1: FINRA Volume Bar Chart -->
+      <div class="chart-card" id="finraChartCard" style="{finra_chart_display}">
+        <canvas id="finraChart" height="280"></canvas>
+      </div>
+
       <div class="table-card">
         <div class="table-scroll">
           <table>
@@ -861,6 +1144,8 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
                 <th>Week Ending</th>
                 <th style="text-align:right">Shares</th>
                 <th style="text-align:right">Trades</th>
+                <th style="text-align:right">WoW Change</th>
+                <th style="text-align:right">Mkt Share %</th>
               </tr>
             </thead>
             <tbody>
@@ -878,6 +1163,12 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
         <div class="section-rule"></div>
         <div class="section-count">latest close</div>
       </div>
+
+      <!-- Chart 2: Parent Stock Price Lines -->
+      <div class="chart-card" id="priceChartCard" style="{price_chart_display}">
+        <canvas id="priceChart" height="220"></canvas>
+      </div>
+
       <div class="table-card">
         <div class="table-scroll">
           <table>
@@ -921,6 +1212,161 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
   </div>
 
 </div><!-- /.page -->
+
+<script>
+// Chart.js global defaults
+Chart.defaults.color = '#6b7fa8';
+Chart.defaults.borderColor = '#1e3060';
+Chart.defaults.backgroundColor = 'transparent';
+
+// ---- Inline data ----
+var finraData    = {finra_chart_json};
+var priceData    = {price_chart_json};
+var filingsData  = {filings_chart_json};
+
+// ---- Helpers ----
+function fmtKM(v) {{
+  if (v === null || v === undefined) return '';
+  if (v >= 1e9) return (v/1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(0) + 'K';
+  return String(v);
+}}
+
+// ---- Chart 1: FINRA Volume Bar (horizontal) ----
+(function() {{
+  var card = document.getElementById('finraChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!finraData.labels || finraData.labels.length === 0) {{ card.style.display = 'none'; return; }}
+  var ctx = document.getElementById('finraChart').getContext('2d');
+  new Chart(ctx, {{
+    type: 'bar',
+    data: {{
+      labels: finraData.labels,
+      datasets: [{{
+        label: 'Total Shares',
+        data: finraData.values,
+        backgroundColor: 'rgba(0, 198, 255, 0.7)',
+        borderColor: 'rgba(0, 198, 255, 0.9)',
+        borderWidth: 1
+      }}]
+    }},
+    options: {{
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {{
+        legend: {{ display: false }},
+        tooltip: {{
+          callbacks: {{
+            label: function(ctx) {{ return ' ' + fmtKM(ctx.raw); }}
+          }}
+        }}
+      }},
+      scales: {{
+        x: {{
+          grid: {{ color: '#1e3060' }},
+          ticks: {{
+            callback: function(v) {{ return fmtKM(v); }}
+          }}
+        }},
+        y: {{
+          grid: {{ color: '#1e3060' }}
+        }}
+      }}
+    }}
+  }});
+}})();
+
+// ---- Chart 2: Parent Stock Price Lines ----
+(function() {{
+  var card = document.getElementById('priceChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!priceData.dates || priceData.dates.length === 0) {{ card.style.display = 'none'; return; }}
+  var colors = {{ GS: '#00C6FF', JPM: '#4e8df5', MS: '#00d68f', UBS: '#ffd32a', VIRT: '#ff6b81' }};
+  var datasets = Object.keys(priceData.series).map(function(ticker) {{
+    return {{
+      label: ticker,
+      data: priceData.series[ticker],
+      borderColor: colors[ticker] || '#6b7fa8',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: 2,
+      tension: 0.3,
+      spanGaps: true
+    }};
+  }});
+  var ctx = document.getElementById('priceChart').getContext('2d');
+  new Chart(ctx, {{
+    type: 'line',
+    data: {{ labels: priceData.dates, datasets: datasets }},
+    options: {{
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {{
+        legend: {{ position: 'top', labels: {{ boxWidth: 10, padding: 12 }} }},
+        tooltip: {{
+          callbacks: {{
+            label: function(ctx) {{
+              return ' ' + ctx.dataset.label + ': $' + (ctx.raw !== null ? ctx.raw.toFixed(2) : 'N/A');
+            }}
+          }}
+        }}
+      }},
+      scales: {{
+        x: {{
+          grid: {{ color: '#1e3060' }},
+          ticks: {{ maxTicksLimit: 8, maxRotation: 30 }}
+        }},
+        y: {{
+          grid: {{ color: '#1e3060' }},
+          ticks: {{
+            callback: function(v) {{ return '$' + v; }}
+          }}
+        }}
+      }}
+    }}
+  }});
+}})();
+
+// ---- Chart 3: Filing Activity by Day ----
+(function() {{
+  var card = document.getElementById('filingsChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!filingsData.labels || filingsData.labels.length === 0) {{ card.style.display = 'none'; return; }}
+  var ctx = document.getElementById('filingsChart').getContext('2d');
+  new Chart(ctx, {{
+    type: 'bar',
+    data: {{
+      labels: filingsData.labels,
+      datasets: [{{
+        label: 'Filings',
+        data: filingsData.values,
+        backgroundColor: '#4e8df5',
+        borderColor: '#4e8df5',
+        borderWidth: 1
+      }}]
+    }},
+    options: {{
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {{
+        legend: {{ display: false }}
+      }},
+      scales: {{
+        x: {{
+          grid: {{ color: '#1e3060' }},
+          ticks: {{ maxRotation: 45, maxTicksLimit: 12 }}
+        }},
+        y: {{
+          grid: {{ color: '#1e3060' }},
+          ticks: {{ stepSize: 1 }}
+        }}
+      }}
+    }}
+  }});
+}})();
+</script>
 </body>
 </html>
 """
@@ -948,10 +1394,20 @@ def main():
         n_filings      = query_filings_count_30d(conn)
         n_finra        = query_finra_count(conn)
         n_market       = query_market_data_count(conn)
+        wow_share      = query_finra_wow_and_share(conn)
+        filer_wow_share = query_filers_volume_wow_share(conn)
+        finra_bar_data = query_finra_bar_chart_data(conn)
+        all_market_data = query_all_market_data(conn)
+        filings_by_day = query_filings_by_day(conn)
         conn.close()
     else:
         filers = filings = finra_top10 = market_data = filers_volume = []
         n_filings = n_finra = n_market = 0
+        wow_share = {}
+        filer_wow_share = {}
+        finra_bar_data = []
+        all_market_data = []
+        filings_by_day = []
 
     stats = {
         "n_filers":  len(filers),
@@ -970,6 +1426,11 @@ def main():
         filers_volume=filers_volume,
         stats=stats,
         generated_at=generated_at,
+        wow_share=wow_share,
+        filer_wow_share=filer_wow_share,
+        finra_bar_data=finra_bar_data,
+        all_market_data=all_market_data,
+        filings_by_day=filings_by_day,
     )
 
     OUT_PATH.write_text(html, encoding="utf-8")
@@ -977,6 +1438,7 @@ def main():
 
     ROOT_COPY.write_text(html, encoding="utf-8")
     print(f"Root copy written: {ROOT_COPY}")
+    print("Success.")
 
 
 if __name__ == "__main__":

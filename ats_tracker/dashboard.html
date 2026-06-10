@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ATS Tracker — Mosaic Platforms</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -302,6 +303,15 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
   padding: 1px 6px;
 }
 
+/* ===== CHART CARD ===== */
+.chart-card {
+  background: #0f1e38;
+  border: 1px solid #1e3060;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
 /* ===== FOOTER ===== */
 .footer {
   margin-top: 40px;
@@ -335,7 +345,7 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
       </div>
     </div>
     <div class="hdr-right">
-      <div><span class="live-dot"></span>Live &nbsp;&mdash;&nbsp; <span class="ts">Last updated: 2026-06-10 17:53</span></div>
+      <div><span class="live-dot"></span>Live &nbsp;&mdash;&nbsp; <span class="ts">Last updated: 2026-06-10 18:02</span></div>
       <div><span class="badge-venues">16 venues tracked</span></div>
     </div>
   </div>
@@ -364,13 +374,19 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
     </div>
   </div>
 
-  <!-- ===== EDGAR FILINGS TABLE ===== -->
+  <!-- ===== EDGAR FILINGS SECTION ===== -->
   <div class="section">
     <div class="section-hdr">
       <h2>EDGAR Filings</h2>
       <div class="section-rule"></div>
       <div class="section-count">21 rows &nbsp;/&nbsp; last 30 days</div>
     </div>
+
+    <!-- Chart 3: Filing Activity by Day -->
+    <div class="chart-card" id="filingsChartCard" style="">
+      <canvas id="filingsChart" height="180"></canvas>
+    </div>
+
     <div class="table-card">
       <div class="table-scroll">
         <table>
@@ -555,6 +571,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
               <th>Latest Filing</th>
               <th style="text-align:right">Weekly Shares</th>
               <th style="text-align:right">Weekly Trades</th>
+              <th style="text-align:right">WoW Change</th>
+              <th style="text-align:right">Mkt Share %</th>
             </tr>
           </thead>
           <tbody>
@@ -567,6 +585,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-12</td>
             <td class="td-num">1,746,573,535</td>
             <td class="td-num">3,382,470</td>
+            <td class="td-num"><span class="pos">+37.6%</span></td>
+            <td class="td-num">11.0%</td>
           </tr>
 
           <tr>
@@ -577,6 +597,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-09</td>
             <td class="td-num">1,529,476,032</td>
             <td class="td-num">1,675,662</td>
+            <td class="td-num"><span class="neg">-10.4%</span></td>
+            <td class="td-num">33.8%</td>
           </tr>
 
           <tr>
@@ -587,6 +609,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-07</td>
             <td class="td-num">961,616,664</td>
             <td class="td-num">1,810,812</td>
+            <td class="td-num"><span class="neg">-12.7%</span></td>
+            <td class="td-num">21.2%</td>
           </tr>
 
           <tr>
@@ -597,6 +621,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-04</td>
             <td class="td-num">273,749,192</td>
             <td class="td-num">777,825</td>
+            <td class="td-num"><span class="pos">+8.0%</span></td>
+            <td class="td-num">12.1%</td>
           </tr>
 
           <tr>
@@ -607,6 +633,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-10</td>
             <td class="td-num">146,221,445</td>
             <td class="td-num">519,270</td>
+            <td class="td-num"><span class="neg">-44.1%</span></td>
+            <td class="td-num">1.3%</td>
           </tr>
 
           <tr>
@@ -617,6 +645,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-08</td>
             <td class="td-num">79,970,402</td>
             <td class="td-num">106,993</td>
+            <td class="td-num"><span class="pos">+3.6%</span></td>
+            <td class="td-num">3.5%</td>
           </tr>
 
           <tr>
@@ -627,6 +657,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-06</td>
             <td class="td-num">44,811,559</td>
             <td class="td-num">54,700</td>
+            <td class="td-num"><span class="neg">-18.3%</span></td>
+            <td class="td-num">2.0%</td>
           </tr>
 
           <tr>
@@ -637,6 +669,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-02</td>
             <td class="td-num">14,197,071</td>
             <td class="td-num">14,080</td>
+            <td class="td-num"><span class="neg">-20.5%</span></td>
+            <td class="td-num">0.6%</td>
           </tr>
 
           <tr>
@@ -647,6 +681,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-06-11</td>
             <td class="td-num">9,116,276</td>
             <td class="td-num">10,958</td>
+            <td class="td-num"><span class="pos">+48.2%</span></td>
+            <td class="td-num">0.4%</td>
           </tr>
           </tbody>
         </table>
@@ -663,6 +699,12 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
         <h2>FINRA Volume — Top 10 by Shares</h2>
         <div class="section-rule"></div>
       </div>
+
+      <!-- Chart 1: FINRA Volume Bar Chart -->
+      <div class="chart-card" id="finraChartCard" style="">
+        <canvas id="finraChart" height="280"></canvas>
+      </div>
+
       <div class="table-card">
         <div class="table-scroll">
           <table>
@@ -673,6 +715,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
                 <th>Week Ending</th>
                 <th style="text-align:right">Shares</th>
                 <th style="text-align:right">Trades</th>
+                <th style="text-align:right">WoW Change</th>
+                <th style="text-align:right">Mkt Share %</th>
               </tr>
             </thead>
             <tbody>
@@ -683,6 +727,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-23</td>
             <td class="td-num">59,619,512</td>
             <td class="td-num">43,202</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -691,6 +737,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-30</td>
             <td class="td-num">59,028,171</td>
             <td class="td-num">70,271</td>
+            <td class="td-num"><span class="pos">+0.1%</span></td>
+            <td class="td-num">2.6%</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -699,6 +747,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-23</td>
             <td class="td-num">58,987,638</td>
             <td class="td-num">182,060</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -707,6 +757,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-16</td>
             <td class="td-num">58,889,155</td>
             <td class="td-num">75,888</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -715,6 +767,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-30</td>
             <td class="td-num">58,599,400</td>
             <td class="td-num">101,735</td>
+            <td class="td-num"><span class="pos">+1.6%</span></td>
+            <td class="td-num">2.6%</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -723,6 +777,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-23</td>
             <td class="td-num">57,683,473</td>
             <td class="td-num">40,968</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -731,6 +787,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-30</td>
             <td class="td-num">56,860,404</td>
             <td class="td-num">40,995</td>
+            <td class="td-num"><span class="pos">+437.9%</span></td>
+            <td class="td-num">2.5%</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -739,6 +797,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-16</td>
             <td class="td-num">55,390,206</td>
             <td class="td-num">59,367</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -747,6 +807,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-30</td>
             <td class="td-num">53,079,738</td>
             <td class="td-num">76,704</td>
+            <td class="td-num"><span class="pos">+62.8%</span></td>
+            <td class="td-num">2.3%</td>
           </tr>
 
           <tr style="border-left: 3px solid #00C6FF;">
@@ -755,6 +817,8 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td class="td-mono">2026-05-30</td>
             <td class="td-num">52,437,223</td>
             <td class="td-num">66,460</td>
+            <td class="td-num"><span class="pos">+89.0%</span></td>
+            <td class="td-num">2.3%</td>
           </tr>
             </tbody>
           </table>
@@ -769,6 +833,12 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
         <div class="section-rule"></div>
         <div class="section-count">latest close</div>
       </div>
+
+      <!-- Chart 2: Parent Stock Price Lines -->
+      <div class="chart-card" id="priceChartCard" style="">
+        <canvas id="priceChart" height="220"></canvas>
+      </div>
+
       <div class="table-card">
         <div class="table-scroll">
           <table>
@@ -956,9 +1026,164 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
   <div class="footer">
     ATS Tracker &nbsp;&bull;&nbsp; Mosaic Platforms &nbsp;&bull;&nbsp;
     Data: SEC EDGAR &middot; FINRA ATS Transparency &middot; Polygon.io<br>
-    <span style="font-size:10px">INTERNAL USE ONLY &nbsp;&mdash;&nbsp; 2026-06-10 17:53</span>
+    <span style="font-size:10px">INTERNAL USE ONLY &nbsp;&mdash;&nbsp; 2026-06-10 18:02</span>
   </div>
 
 </div><!-- /.page -->
+
+<script>
+// Chart.js global defaults
+Chart.defaults.color = '#6b7fa8';
+Chart.defaults.borderColor = '#1e3060';
+Chart.defaults.backgroundColor = 'transparent';
+
+// ---- Inline data ----
+var finraData    = {"labels": ["UBS ATS", "Sigma X2", "MS Pool", "JPBX", "POSIT", "MatchIt", "BIDS ATS", "Mosaic ATS", "OneChronos ATS", "Virtu ATS"], "values": [2299384886, 1448993657, 817235000, 675104500, 414277392, 322720011, 264089705, 148660263, 123790273, 58445233]};
+var priceData    = {"dates": ["2026-05-12", "2026-05-13", "2026-05-14", "2026-05-15", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-21", "2026-05-22", "2026-05-25", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-08", "2026-06-09", "2026-06-10"], "series": {"GS": [514.71, 517.57, 518.93, 529.74, 537.67, 544.95, 544.3, 539.97, 530.04, 538.65, 537.73, 536.88, 544.29, 542.81, 538.69, 540.12, 544.73, 549.68, 541.8, 542.27, 547.75, 552.59], "JPM": [226.95, 228.57, 228.88, 228.68, 228.39, 227.41, 224.05, 224.89, 228.84, 229.28, 232.83, 234.74, 238.15, 238.67, 238.16, 235.18, 233.22, 235.54, 241.92, 242.63, 242.2, 245.95], "MS": [120.05, 118.61, 119.43, 121.65, 119.99, 119.79, 118.84, 119.42, 121.6, 121.05, 121.58, 122.12, 121.95, 124.31, 126.9, 125.4, 126.98, 127.92, 128.79, 130.0, 132.84, 132.74], "UBS": [31.93, 31.48, 31.98, 31.56, 31.84, 32.03, 31.63, 32.05, 32.03, 32.42, 32.48, 32.31, 32.25, 32.13, 32.22, 32.37, 32.74, 32.77, 33.19, 33.22, 33.66, 33.22], "VIRT": [28.98, 28.84, 28.55, 28.62, 28.53, 28.69, 28.62, 28.64, 28.77, 29.17, 29.66, 29.41, 29.31, 28.79, 28.8, 28.82, 29.24, 29.28, 29.73, 29.01, 29.06, 28.96]}};
+var filingsData  = {"labels": ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12"], "values": [1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1]};
+
+// ---- Helpers ----
+function fmtKM(v) {
+  if (v === null || v === undefined) return '';
+  if (v >= 1e9) return (v/1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(0) + 'K';
+  return String(v);
+}
+
+// ---- Chart 1: FINRA Volume Bar (horizontal) ----
+(function() {
+  var card = document.getElementById('finraChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!finraData.labels || finraData.labels.length === 0) { card.style.display = 'none'; return; }
+  var ctx = document.getElementById('finraChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: finraData.labels,
+      datasets: [{
+        label: 'Total Shares',
+        data: finraData.values,
+        backgroundColor: 'rgba(0, 198, 255, 0.7)',
+        borderColor: 'rgba(0, 198, 255, 0.9)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) { return ' ' + fmtKM(ctx.raw); }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e3060' },
+          ticks: {
+            callback: function(v) { return fmtKM(v); }
+          }
+        },
+        y: {
+          grid: { color: '#1e3060' }
+        }
+      }
+    }
+  });
+})();
+
+// ---- Chart 2: Parent Stock Price Lines ----
+(function() {
+  var card = document.getElementById('priceChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!priceData.dates || priceData.dates.length === 0) { card.style.display = 'none'; return; }
+  var colors = { GS: '#00C6FF', JPM: '#4e8df5', MS: '#00d68f', UBS: '#ffd32a', VIRT: '#ff6b81' };
+  var datasets = Object.keys(priceData.series).map(function(ticker) {
+    return {
+      label: ticker,
+      data: priceData.series[ticker],
+      borderColor: colors[ticker] || '#6b7fa8',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: 2,
+      tension: 0.3,
+      spanGaps: true
+    };
+  });
+  var ctx = document.getElementById('priceChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: { labels: priceData.dates, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ' ' + ctx.dataset.label + ': $' + (ctx.raw !== null ? ctx.raw.toFixed(2) : 'N/A');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e3060' },
+          ticks: { maxTicksLimit: 8, maxRotation: 30 }
+        },
+        y: {
+          grid: { color: '#1e3060' },
+          ticks: {
+            callback: function(v) { return '$' + v; }
+          }
+        }
+      }
+    }
+  });
+})();
+
+// ---- Chart 3: Filing Activity by Day ----
+(function() {
+  var card = document.getElementById('filingsChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!filingsData.labels || filingsData.labels.length === 0) { card.style.display = 'none'; return; }
+  var ctx = document.getElementById('filingsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: filingsData.labels,
+      datasets: [{
+        label: 'Filings',
+        data: filingsData.values,
+        backgroundColor: '#4e8df5',
+        borderColor: '#4e8df5',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e3060' },
+          ticks: { maxRotation: 45, maxTicksLimit: 12 }
+        },
+        y: {
+          grid: { color: '#1e3060' },
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+})();
+</script>
 </body>
 </html>
