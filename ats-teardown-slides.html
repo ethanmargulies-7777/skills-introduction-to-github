@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competitive ATS Teardown — Mosaic Platforms</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a1628;
+    --bg2: #0f1e38;
+    --bg3: #162040;
+    --accent: #00C6FF;
+    --accent2: #0099cc;
+    --white: #f0f4ff;
+    --muted: #8a9bc0;
+    --border: #1e3060;
+    --row-even: rgba(0, 198, 255, 0.04);
+    --row-odd: rgba(255,255,255,0.02);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--white);
+    font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    overflow: hidden;
+  }
+
+  /* Progress bar */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), #0066ff);
+    transition: width 0.3s ease;
+    z-index: 100;
+  }
+
+  /* Deck container */
+  #deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 56px 72px 80px 72px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    transform: translateX(40px);
+  }
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  .slide.exit-left {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+
+  /* Typography */
+  .slide-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .slide-title {
+    font-size: 3.2rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--white);
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  .slide-subtitle {
+    font-size: 1.35rem;
+    color: var(--accent);
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  .slide-byline {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .slide-header {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .slide-sub {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+
+  /* Title slide decoration */
+  .title-rule {
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    margin: 20px 0;
+  }
+
+  .title-logo-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    margin-top: 32px;
+  }
+  .logo-chip {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: var(--bg2);
+  }
+  .logo-chip.accent {
+    border-color: var(--accent2);
+    color: var(--accent);
+  }
+
+  /* Bullet lists */
+  ul.deck-list {
+    list-style: none;
+    width: 100%;
+    max-width: 900px;
+  }
+  ul.deck-list li {
+    padding: 9px 0 9px 22px;
+    position: relative;
+    font-size: 1.0rem;
+    line-height: 1.55;
+    color: var(--white);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  ul.deck-list li:last-child { border-bottom: none; }
+  ul.deck-list li::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 19px;
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    transform: translateY(-50%);
+  }
+  ul.deck-list li strong, ul.deck-list li em.hl {
+    color: var(--accent);
+    font-style: normal;
+  }
+  ul.deck-list li .note {
+    color: var(--muted);
+    font-size: 0.88em;
+  }
+
+  /* Key facts grid */
+  .kf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+    max-width: 1000px;
+  }
+  .kf-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .kf-item .kf-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 5px;
+  }
+
+  /* Tables */
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  table th {
+    background: var(--bg3);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 11px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--accent2);
+  }
+  table td {
+    padding: 10px 14px;
+    color: var(--white);
+    vertical-align: top;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.4;
+  }
+  table tr:nth-child(even) td { background: var(--row-even); }
+  table tr:nth-child(odd) td { background: var(--row-odd); }
+  table tr:last-child td { border-bottom: none; }
+  table td strong { color: var(--accent); }
+
+  /* Matrix table (slide 9) */
+  .matrix-wrap table { font-size: 0.77rem; }
+  .matrix-wrap table th { padding: 8px 10px; font-size: 0.68rem; }
+  .matrix-wrap table td { padding: 7px 10px; }
+
+  /* Philosophy table (slide 3) */
+  .philosophy-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    background: rgba(0,198,255,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(0,198,255,0.3);
+  }
+
+  /* References */
+  .ref-list {
+    list-style: none;
+    width: 100%;
+    max-width: 900px;
+  }
+  .ref-list li {
+    padding: 10px 0 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .ref-list li:last-child { border-bottom: none; }
+  .ref-num {
+    min-width: 28px;
+    height: 22px;
+    background: rgba(0,198,255,0.12);
+    border: 1px solid rgba(0,198,255,0.3);
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .ref-list li strong { color: var(--accent); }
+  .ref-list li .arrow {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* Source list */
+  .src-list {
+    list-style: none;
+    width: 100%;
+    max-width: 900px;
+  }
+  .src-list li {
+    padding: 8px 0 8px 20px;
+    position: relative;
+    font-size: 0.88rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .src-list li:last-child { border-bottom: none; }
+  .src-list li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--accent2);
+  }
+  .src-list li strong { color: var(--white); }
+
+  /* Navigation controls */
+  #controls {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 100;
+  }
+  .nav-btn {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--white);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, border-color 0.2s, transform 0.1s;
+    user-select: none;
+  }
+  .nav-btn:hover { background: var(--bg3); border-color: var(--accent2); }
+  .nav-btn:active { transform: scale(0.93); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  #slide-counter {
+    font-size: 0.8rem;
+    color: var(--muted);
+    min-width: 52px;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  /* Slide number */
+  .slide-num {
+    position: fixed;
+    bottom: 28px;
+    right: 36px;
+    font-size: 0.75rem;
+    color: var(--border);
+    letter-spacing: 0.1em;
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  /* Decorative background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(0,198,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,198,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #deck, #progress-bar, #controls, .slide-num { z-index: 1; }
+
+  /* Mosaic highlight box */
+  .highlight-box {
+    background: rgba(0,198,255,0.07);
+    border: 1px solid rgba(0,198,255,0.25);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 18px;
+    margin-top: 16px;
+    font-size: 0.92rem;
+    color: var(--white);
+    max-width: 900px;
+    width: 100%;
+    line-height: 1.55;
+  }
+
+  /* Two-column layout for some slides */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 1000px;
+  }
+  .col-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+  .col-card .col-header {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .col-card ul { list-style: none; }
+  .col-card ul li {
+    font-size: 0.84rem;
+    padding: 5px 0 5px 16px;
+    position: relative;
+    line-height: 1.45;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--white);
+  }
+  .col-card ul li:last-child { border-bottom: none; }
+  .col-card ul li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent2);
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<div id="deck">
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide active" id="slide-1">
+    <div class="slide-tag">Mosaic Platforms · Pre-Internship Research</div>
+    <div class="slide-title">Competitive ATS<br>Teardown</div>
+    <div class="title-rule"></div>
+    <div class="slide-subtitle">IEX &nbsp;·&nbsp; Liquidnet &nbsp;·&nbsp; BIDS Trading &nbsp;·&nbsp; Luminex</div>
+    <div class="slide-byline">Mosaic Platforms — Pre-Internship Research &nbsp;|&nbsp; June 2026</div>
+    <div class="title-logo-row">
+      <span class="logo-chip accent">IEX</span>
+      <span class="logo-chip">Liquidnet</span>
+      <span class="logo-chip">BIDS</span>
+      <span class="logo-chip">Luminex / LeveL</span>
+      <span class="logo-chip accent">Mosaic MERIT</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: The Problem -->
+  <div class="slide" id="slide-2">
+    <div class="slide-tag">Context</div>
+    <div class="slide-header">Why Compatibility-Based Matching Matters</div>
+    <div class="slide-sub">The structural failure modes current venues haven't solved</div>
+    <ul class="deck-list">
+      <li>Price-time priority optimizes <strong>the match</strong> — not what happens after</li>
+      <li>Toxic flow causes post-trade price reversion against the passive side</li>
+      <li>Broker-operated dark pools have structural conflicts enforcing their own controls</li>
+      <li><strong>Barclays LX:</strong> claimed "Liquidity Profiling" toxicity controls were fraudulently misrepresented → <strong>$154M settlement (2016)</strong></li>
+      <li>As institutional liquidity is internalized, remaining dark pool flow becomes increasingly adversely selected</li>
+      <li>MERIT scores <strong>post-trade workflow impact</strong> — not just execution mechanics</li>
+    </ul>
+  </div>
+
+  <!-- SLIDE 3: Four Philosophies -->
+  <div class="slide" id="slide-3">
+    <div class="slide-tag">Framework</div>
+    <div class="slide-header">Four Approaches to Adverse Selection</div>
+    <div class="slide-sub">Every dark venue has a theory of toxicity — they differ in where the defense sits</div>
+    <div class="table-wrap" style="max-width:1000px; margin-top:8px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Philosophy</th>
+            <th>Venue</th>
+            <th>Mechanism</th>
+            <th>Key Tradeoff</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="philosophy-tag">Tech Shield</span></td>
+            <td><strong>IEX</strong></td>
+            <td>Speed bump + CQI signal reprice resting orders</td>
+            <td>HFTs still participate; high fill rate</td>
+          </tr>
+          <tr>
+            <td><span class="philosophy-tag">Structural Exclusion</span></td>
+            <td><strong>Liquidnet, Luminex</strong></td>
+            <td>Ban HFTs and prop traders at the door</td>
+            <td>Lower fill rate; harder to scale</td>
+          </tr>
+          <tr>
+            <td><span class="philosophy-tag">Behavioral Scoring</span></td>
+            <td><strong>BIDS</strong></td>
+            <td>Score firm-up rate; client-controlled filters</td>
+            <td>Only scores execution mechanics</td>
+          </tr>
+          <tr>
+            <td><span class="philosophy-tag">Compatibility Matching</span></td>
+            <td><strong>Mosaic</strong></td>
+            <td>MERIT: score post-trade counterparty impact</td>
+            <td>Conceptually strongest; unproven at scale</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: IEX -->
+  <div class="slide" id="slide-4">
+    <div class="slide-tag">Venue Deep-Dive — 1 of 4</div>
+    <div class="slide-header">IEX — Technology-Based Defense</div>
+    <div class="slide-sub">Registered exchange since 2016. No Form ATS-N filed.</div>
+    <div class="kf-grid">
+      <div class="kf-item">
+        <div class="kf-label">Matching</div>
+        Price-time (displayed); midpoint peg non-displayed; D-Peg retracts when Signal fires, M-Peg stays
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Participants</div>
+        Open access — any registered BD; HFTs permitted but speed-bumped
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Fee</div>
+        $0.0010/share non-displayed (both sides charged); added maker-taker rebates July 2023 reversing prior stance
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Toxicity Controls</div>
+        350µs speed bump (38mi coiled fiber) + CQI Signal (9-rule model, SEC-filed) + D-Limit repricing
+      </div>
+    </div>
+    <div class="highlight-box">
+      <strong>Key signal:</strong> IEX's Signal fires BEFORE inbound orders arrive — matching engine has real-time data during the delay window.<br>
+      <span style="color:var(--muted); font-size:0.88em;">Watch out: Reversed anti-rebate position under competitive pressure in 2023</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Liquidnet -->
+  <div class="slide" id="slide-5">
+    <div class="slide-tag">Venue Deep-Dive — 2 of 4</div>
+    <div class="slide-header">Liquidnet — Natural Block Negotiation</div>
+    <div class="slide-sub">Acquired by TP ICAP (March 2021, $700M). Two ATSs: Negotiation + H2O.</div>
+    <div class="kf-grid">
+      <div class="kf-item">
+        <div class="kf-label">Matching</div>
+        OMS blotter-scraping → indication match → bilateral negotiation window → execution at negotiated price (midpoint, VWAP cross, or agreed price)
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Min Size / Participants</div>
+        5,000 shares or 5% ADV · Buy-side only, ≥$100M AUM · HFTs + prop explicitly excluded · BD carve-out for transition managers only
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Fee</div>
+        Commission per share; no membership fee; no maker-taker
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">H2O ATS</div>
+        Auto-execution layer with Liquidity Partners (sell-side BDs) — LP interaction is opt-in only for Members
+      </div>
+    </div>
+    <div class="highlight-box" style="color:var(--muted);">
+      <strong style="color:white;">Watch out:</strong> 2025 SEC enforcement $5M (Market Access Rule; confidential subscriber info leakage) · 2014 enforcement $2M (ECM employees accessed OMS data)
+    </div>
+  </div>
+
+  <!-- SLIDE 6: BIDS -->
+  <div class="slide" id="slide-6">
+    <div class="slide-tag">Venue Deep-Dive — 3 of 4</div>
+    <div class="slide-header">BIDS — Behavioral Scoring at Scale</div>
+    <div class="slide-sub">Acquired by Cboe Global Markets 2021. Largest independent block ATS.</div>
+    <div class="kf-grid">
+      <div class="kf-item">
+        <div class="kf-label">Matching</div>
+        Conditional → private Invitation to Trade → firm-up → midpoint execution; AIOIs for sponsor-targeted bilateral flow
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Participants</div>
+        Two-tier — Subscribers (registered BDs) + Sponsored Firms (buy-side via Sponsor BD); 520+ asset managers, 100+ BDs
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Fee</div>
+        $0.0003–$0.005/share; $100/month port fee capped at $1k/month; no rebates; charged to Subscribers only
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Toxicity Controls</div>
+        BIDS Scorecard (firm-up rate + flow patterns) + client-controlled counterparty filters + no broadcast IOIs
+      </div>
+    </div>
+    <div class="highlight-box">
+      <strong>Scale:</strong> Jan 2026 ADV = 241M matched shares/day · avg block = 23,604 shares · FY2025 ADV up 96% YoY<br>
+      <span style="color:#ff6b6b; font-size:0.88em;">Key risk to Mosaic: Biggest competitive threat for block flow — growing aggressively under Cboe</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: Luminex -->
+  <div class="slide" id="slide-7">
+    <div class="slide-tag">Venue Deep-Dive — 4 of 4</div>
+    <div class="slide-header">Luminex — Buy-Side Owns the Pool</div>
+    <div class="slide-sub">Founded 2015 by 9 asset managers. Merged with LeveL ATS 2021. Rebranded LeveL Markets April 2025.</div>
+    <div class="kf-grid">
+      <div class="kf-item">
+        <div class="kf-label">Matching</div>
+        Quantity-then-time priority; midpoint-only pricing; Firm, Conditional, and Negotiable order types
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Participants</div>
+        Buy-side only; ≥$1B AUM preferred; HFTs explicitly excluded; Fidelity ~60% ownership stake
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Fee</div>
+        25–170 mills/share ($0.0025–$0.0175); base ~50 mills; driven by connectivity cost; no maker-taker
+      </div>
+      <div class="kf-item">
+        <div class="kf-label">Founding Owners</div>
+        Fidelity · BlackRock · T. Rowe Price · State Street · BNY Mellon · Capital Group · Invesco · JPMorgan AM · MFS
+      </div>
+    </div>
+    <div class="highlight-box" style="color:var(--muted);">
+      <strong style="color:white;">Watch out:</strong> Rebranded to LeveL Markets April 2025 — recent consolidation may shift buy-side-only character · Toxicity controls: consortium ownership + $1B AUM gatekeeping + fall-down policing on Conditionals
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Mosaic MERIT -->
+  <div class="slide" id="slide-8">
+    <div class="slide-tag">The Thesis</div>
+    <div class="slide-header">Mosaic Platforms — Compatibility-Based Matching</div>
+    <div class="slide-sub">Launched April 27, 2026. Backed by Guggenheim Securities + RBC. Powered by KX/kdb+.</div>
+    <ul class="deck-list" style="max-width:860px;">
+      <li>Matching: <strong>MERIT score-driven compatibility matching</strong> between Investors (buy-side) and Risk Providers (dealers/MMs)</li>
+      <li>MERIT measures: Post-trade price impact of your workflow on counterparties — slippage, signaling risk, information leakage</li>
+      <li><strong>Unlike BIDS Scorecard:</strong> MERIT scores the ongoing trading relationship, not just firm-up behavior</li>
+      <li><strong>Unlike Luminex/Liquidnet:</strong> Admits mixed participants but scores and matches by compatibility — doesn't just exclude</li>
+      <li><strong>Unlike IEX:</strong> Post-trade behavioral assessment vs. pre-trade technical signal</li>
+      <li><strong>Powered by KX:</strong> kdb+ time-series technology enables high-velocity MERIT score computation</li>
+      <li>Status: Conceptually strongest model; <span style="color:var(--muted);">no published performance data yet — proving it is the mission</span></li>
+    </ul>
+  </div>
+
+  <!-- SLIDE 9: Comparison Matrix -->
+  <div class="slide" id="slide-9">
+    <div class="slide-tag">Comparison</div>
+    <div class="slide-header">Side-by-Side Comparison</div>
+    <div class="table-wrap matrix-wrap" style="max-width:100%; margin-top:10px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>IEX</th>
+            <th>Liquidnet</th>
+            <th>BIDS</th>
+            <th>Luminex</th>
+            <th>Mosaic</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Venue Type</strong></td>
+            <td>Exchange</td>
+            <td>Dark Pool ATS (2)</td>
+            <td>Dark Pool ATS</td>
+            <td>Dark Pool ATS</td>
+            <td>Dark Pool ATS</td>
+          </tr>
+          <tr>
+            <td><strong>Matching</strong></td>
+            <td>Price-time + midpoint peg</td>
+            <td>Bilateral negotiation</td>
+            <td>Conditional + firm-up</td>
+            <td>Qty-then-time, midpoint</td>
+            <td>Compatibility (MERIT)</td>
+          </tr>
+          <tr>
+            <td><strong>Participants</strong></td>
+            <td>Open (BD req.)</td>
+            <td>Buy-side ≥$100M AUM</td>
+            <td>BDs + Sponsored buy-side</td>
+            <td>Buy-side ≥$1B AUM</td>
+            <td>Investors + Risk Providers</td>
+          </tr>
+          <tr>
+            <td><strong>HFT Access</strong></td>
+            <td>Permitted (bumped)</td>
+            <td>Excluded</td>
+            <td>Permitted (filtered)</td>
+            <td>Excluded</td>
+            <td>Risk Provider tier (scored)</td>
+          </tr>
+          <tr>
+            <td><strong>Min Size</strong></td>
+            <td>None</td>
+            <td>5,000 sh / 5% ADV</td>
+            <td>Participant-set</td>
+            <td>5,000 shares</td>
+            <td>TBD</td>
+          </tr>
+          <tr>
+            <td><strong>Fee Model</strong></td>
+            <td>$0.001/sh + tiered rebates</td>
+            <td>Commission, no MTA</td>
+            <td>$0.0003–$0.005/sh</td>
+            <td>25–170 mills</td>
+            <td>TBD</td>
+          </tr>
+          <tr>
+            <td><strong>Key Control</strong></td>
+            <td>CQI Signal + speed bump</td>
+            <td>Structural exclusion</td>
+            <td>BIDS Scorecard + filters</td>
+            <td>Consortium ownership</td>
+            <td>MERIT compatibility score</td>
+          </tr>
+          <tr>
+            <td><strong>Owner</strong></td>
+            <td>Private (independent)</td>
+            <td>TP ICAP (2021)</td>
+            <td>Cboe</td>
+            <td>Buy-side consortium</td>
+            <td>Private (GS, RBC backing)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Key Talking Points -->
+  <div class="slide" id="slide-10">
+    <div class="slide-tag">Internship Prep</div>
+    <div class="slide-header">What to Know Before Day One</div>
+    <div class="slide-sub">Six things John Cosenza will likely probe on</div>
+    <ul class="deck-list" style="max-width:900px;">
+      <li><strong>Barclays is the cautionary case:</strong> broker-operated toxicity controls have structural conflicts — Mosaic's external MERIT score and non-BD structure directly addresses this</li>
+      <li><strong>BIDS is the biggest competitive threat:</strong> 241M shares/day ADV, up 96% YoY, Cboe distribution, growing fast</li>
+      <li><strong>Luminex/LeveL rebrand (April 2025):</strong> buy-side-only model facing consolidation pressure — worth monitoring</li>
+      <li><strong>IEX reversed on rebates (July 2023):</strong> even mission-driven venues face commercial realities that compromise the model</li>
+      <li><strong>Brugler &amp; Comerton-Forde (JFE 2025):</strong> causal empirical evidence that restricted-access dark pools produce less information leakage — strongest academic validation for what Mosaic is doing</li>
+      <li><strong>VPIN (Easley et al. 2012):</strong> the academic ancestor of MERIT — know it cold</li>
+    </ul>
+  </div>
+
+  <!-- SLIDE 11: Academic References -->
+  <div class="slide" id="slide-11">
+    <div class="slide-tag">Literature Review</div>
+    <div class="slide-header">Literature You Should Know</div>
+    <div class="slide-sub">Six papers that frame the intellectual foundation of dark pool design</div>
+    <ul class="ref-list" style="max-width:920px; margin-top:8px;">
+      <li>
+        <span class="ref-num">1</span>
+        <div><strong>Glosten-Milgrom (1985)</strong> — Foundational adverse selection model: why informed trading raises spreads</div>
+      </li>
+      <li>
+        <span class="ref-num">2</span>
+        <div><strong>Kyle (1985)</strong> — Informed trading and market depth; the model behind "toxicity"</div>
+      </li>
+      <li>
+        <span class="ref-num">3</span>
+        <div><strong>Easley, López de Prado &amp; O'Hara (2012)</strong> — VPIN: volume-synchronized probability of informed trading; <span style="color:var(--accent);">MERIT's academic precursor</span></div>
+      </li>
+      <li>
+        <span class="ref-num">4</span>
+        <div><strong>Zhu (2014, RFS)</strong> — Uninformed traders prefer dark pools → dark pools can improve price discovery on lit venues</div>
+      </li>
+      <li>
+        <span class="ref-num">5</span>
+        <div><strong>Brugler &amp; Comerton-Forde (2025, JFE)</strong> — Causal evidence: restricted-access dark pools produce less information leakage <span class="arrow">← READ THIS</span></div>
+      </li>
+      <li>
+        <span class="ref-num">6</span>
+        <div><strong>BIS Working Paper 1115 (2023)</strong> — Quantifies HFT latency arbitrage in dark pools</div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- SLIDE 12: Sources -->
+  <div class="slide" id="slide-12">
+    <div class="slide-tag">Appendix</div>
+    <div class="slide-header">Sources</div>
+    <ul class="src-list" style="margin-top:12px; max-width:860px;">
+      <li><strong>SEC EDGAR ATS-N filings:</strong> Luminex (CIK 1609177) · Liquidnet (CIK 1110644) · BIDS Trading (CIK 1368727)</li>
+      <li><strong>IEX:</strong> SR-IEX SRO rule filings + iex.io public disclosures</li>
+      <li><strong>Mosaic Platforms:</strong> BusinessWire launch (Apr 27, 2026) · mosaicplatforms.com</li>
+      <li><strong>Brugler &amp; Comerton-Forde (2025),</strong> Journal of Financial Economics</li>
+      <li><strong>SEC enforcement:</strong> Liquidnet 2025 ($5M) · Barclays/Credit Suisse 2016 ($154M)</li>
+      <li><strong>Bacidore:</strong> "Are Dark Pools All the Same?" (bacidore.com)</li>
+      <li><strong>MarketsWiki:</strong> BIDS ATS · IEX Group</li>
+    </ul>
+    <div class="highlight-box" style="margin-top:24px; font-size:0.85rem; color:var(--muted);">
+      Prepared for Mosaic Platforms internship — June 2026 &nbsp;|&nbsp; Internal research use only
+    </div>
+  </div>
+
+</div><!-- #deck -->
+
+<!-- Navigation -->
+<div id="controls">
+  <button class="nav-btn" id="btn-prev" disabled title="Previous (←)">&#8592;</button>
+  <span id="slide-counter">1 / 12</span>
+  <button class="nav-btn" id="btn-next" title="Next (→)">&#8594;</button>
+</div>
+
+<div class="slide-num" id="slide-num-display">01</div>
+
+<script>
+  const TOTAL = 12;
+  let current = 1;
+  let animating = false;
+
+  const slides = [];
+  for (let i = 1; i <= TOTAL; i++) {
+    slides.push(document.getElementById('slide-' + i));
+  }
+
+  const progressBar = document.getElementById('progress-bar');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const counter = document.getElementById('slide-counter');
+  const numDisplay = document.getElementById('slide-num-display');
+
+  function updateUI() {
+    const pct = ((current - 1) / (TOTAL - 1)) * 100;
+    progressBar.style.width = pct + '%';
+    counter.textContent = current + ' / ' + TOTAL;
+    numDisplay.textContent = String(current).padStart(2, '0');
+    btnPrev.disabled = current === 1;
+    btnNext.disabled = current === TOTAL;
+  }
+
+  function goTo(next) {
+    if (animating || next < 1 || next > TOTAL || next === current) return;
+    animating = true;
+
+    const prev = current;
+    const dir = next > prev ? 1 : -1;
+
+    const leaving = slides[prev - 1];
+    const entering = slides[next - 1];
+
+    // Set initial state for entering slide
+    entering.style.transform = 'translateX(' + (dir * 40) + 'px)';
+    entering.style.opacity = '0';
+    entering.style.pointerEvents = 'none';
+
+    // Remove active from leaving
+    leaving.classList.remove('active');
+    leaving.style.transform = 'translateX(' + (dir * -40) + 'px)';
+    leaving.style.opacity = '0';
+
+    // Trigger entering
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        entering.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+        leaving.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        entering.style.transform = 'translateX(0)';
+        entering.style.opacity = '1';
+        entering.style.pointerEvents = 'all';
+
+        setTimeout(() => {
+          leaving.style.transform = '';
+          leaving.style.opacity = '';
+          leaving.style.transition = '';
+          entering.style.transition = '';
+          entering.classList.add('active');
+          animating = false;
+        }, 360);
+      });
+    });
+
+    current = next;
+    updateUI();
+  }
+
+  btnPrev.addEventListener('click', () => goTo(current - 1));
+  btnNext.addEventListener('click', () => goTo(current + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      goTo(current + 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      goTo(current - 1);
+    } else if (e.key === 'Home') {
+      goTo(1);
+    } else if (e.key === 'End') {
+      goTo(TOTAL);
+    }
+  });
+
+  updateUI();
+</script>
+</body>
+</html>

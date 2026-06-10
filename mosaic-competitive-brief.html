@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competitive Positioning Brief: MERIT vs. the Market</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 11pt;
+    line-height: 1.65;
+    color: #1a1a1a;
+    background: #f7f5f0;
+    padding: 0;
+  }
+
+  .page-wrapper {
+    max-width: 860px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .doc-header {
+    background: #0a1628;
+    padding: 44px 56px 36px;
+    border-bottom: 3px solid #00C6FF;
+  }
+  .doc-header .eyebrow {
+    font-family: 'Arial', sans-serif;
+    font-size: 8pt;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #00C6FF;
+    margin-bottom: 14px;
+  }
+  .doc-header h1 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 22pt;
+    font-weight: normal;
+    color: #ffffff;
+    line-height: 1.25;
+    margin-bottom: 8px;
+  }
+  .doc-header .subtitle {
+    font-family: 'Arial', sans-serif;
+    font-size: 10pt;
+    color: #8ea8cc;
+    margin-bottom: 4px;
+  }
+  .doc-header .prepared-note {
+    font-family: 'Arial', sans-serif;
+    font-size: 8.5pt;
+    color: #5a7090;
+    font-style: italic;
+  }
+
+  /* ── Body ── */
+  .doc-body {
+    padding: 44px 56px 64px;
+  }
+
+  /* ── Section headers ── */
+  .section {
+    margin-bottom: 42px;
+  }
+  .section-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 7.5pt;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #00C6FF;
+    display: block;
+    margin-bottom: 4px;
+  }
+  h2 {
+    font-family: 'Arial', sans-serif;
+    font-size: 12.5pt;
+    font-weight: 700;
+    color: #0a1628;
+    letter-spacing: 0.01em;
+    margin-bottom: 14px;
+    padding-bottom: 7px;
+    border-bottom: 1.5px solid #0a1628;
+  }
+  h3 {
+    font-family: 'Arial', sans-serif;
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #0a1628;
+    margin: 22px 0 8px;
+  }
+  h3.threat-primary { color: #8b1a1a; }
+  h3.threat-secondary { color: #0a1628; }
+
+  p {
+    margin-bottom: 12px;
+  }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── Pull quote / callout ── */
+  .callout {
+    border-left: 3px solid #00C6FF;
+    background: #f4f8ff;
+    padding: 14px 20px;
+    margin: 18px 0;
+    font-size: 10.5pt;
+    line-height: 1.6;
+    color: #1a2a40;
+  }
+  .callout strong {
+    display: block;
+    font-family: 'Arial', sans-serif;
+    font-size: 8pt;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #00C6FF;
+    margin-bottom: 6px;
+  }
+
+  /* ── Risk box ── */
+  .risk-box {
+    border: 1.5px solid #8b1a1a;
+    background: #fff8f8;
+    padding: 18px 22px;
+    margin: 18px 0;
+  }
+  .risk-box .risk-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 7.5pt;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #8b1a1a;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  /* ── Stat row ── */
+  .stat-row {
+    display: flex;
+    gap: 0;
+    margin: 16px 0;
+    border: 1px solid #dde3ec;
+  }
+  .stat-cell {
+    flex: 1;
+    padding: 12px 16px;
+    border-right: 1px solid #dde3ec;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-number {
+    font-family: 'Arial', sans-serif;
+    font-size: 18pt;
+    font-weight: 700;
+    color: #0a1628;
+    display: block;
+    line-height: 1.1;
+  }
+  .stat-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 7.5pt;
+    color: #6a7a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-top: 3px;
+  }
+
+  /* ── Tables ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 9.5pt;
+  }
+  thead tr {
+    background: #0a1628;
+    color: #ffffff;
+  }
+  thead th {
+    font-family: 'Arial', sans-serif;
+    font-weight: 600;
+    font-size: 8pt;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    text-align: left;
+  }
+  tbody tr:nth-child(even) { background: #f5f7fb; }
+  tbody tr:nth-child(odd) { background: #ffffff; }
+  tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #e5e9f0;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  tbody td:first-child {
+    font-family: 'Arial', sans-serif;
+    font-weight: 600;
+    color: #0a1628;
+    white-space: nowrap;
+  }
+  .tag-primary {
+    display: inline-block;
+    background: #8b1a1a;
+    color: #fff;
+    font-family: 'Arial', sans-serif;
+    font-size: 6.5pt;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .tag-monitor {
+    display: inline-block;
+    background: #0a1628;
+    color: #fff;
+    font-family: 'Arial', sans-serif;
+    font-size: 6.5pt;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Numbered findings ── */
+  .finding-list {
+    counter-reset: finding;
+    list-style: none;
+    padding: 0;
+    margin: 14px 0;
+  }
+  .finding-list li {
+    counter-increment: finding;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 18px;
+    align-items: flex-start;
+  }
+  .finding-list li::before {
+    content: counter(finding);
+    font-family: 'Arial', sans-serif;
+    font-size: 16pt;
+    font-weight: 700;
+    color: #0a1628;
+    opacity: 0.15;
+    min-width: 24px;
+    line-height: 1.2;
+    flex-shrink: 0;
+  }
+  .finding-content strong {
+    display: block;
+    font-family: 'Arial', sans-serif;
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #0a1628;
+    margin-bottom: 4px;
+  }
+  .finding-content {
+    font-size: 10pt;
+  }
+
+  /* ── Divider ── */
+  hr.section-rule {
+    border: none;
+    border-top: 1px solid #dde3ec;
+    margin: 36px 0;
+  }
+
+  /* ── Footer ── */
+  .doc-footer {
+    background: #f0ede8;
+    border-top: 2px solid #0a1628;
+    padding: 22px 56px;
+    font-family: 'Arial', sans-serif;
+    font-size: 7.5pt;
+    color: #6a7a8a;
+    line-height: 1.7;
+  }
+  .doc-footer .footer-label {
+    font-size: 7pt;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #0a1628;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  /* ── Citation superscript ── */
+  sup {
+    font-size: 7pt;
+    color: #7a8aa0;
+    vertical-align: super;
+    line-height: 0;
+  }
+
+  /* ── Inline venue badge ── */
+  .venue {
+    font-family: 'Arial', sans-serif;
+    font-weight: 600;
+    font-size: 9.5pt;
+    color: #0a1628;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .page-wrapper {
+      max-width: 100%;
+      border: none;
+    }
+    .doc-body { padding: 32px 48px; }
+    .doc-header { padding: 32px 48px 28px; }
+    .doc-footer { padding: 18px 48px; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ══════════ HEADER ══════════ -->
+  <header class="doc-header">
+    <div class="eyebrow">Mosaic Platforms &nbsp;·&nbsp; Confidential</div>
+    <h1>Competitive Positioning Brief:<br>MERIT vs. the Market</h1>
+    <div class="subtitle">Independent Analysis &nbsp;|&nbsp; June 2026</div>
+    <div class="prepared-note">Prepared for internal review</div>
+  </header>
+
+  <!-- ══════════ BODY ══════════ -->
+  <div class="doc-body">
+
+    <!-- Section 1 -->
+    <section class="section">
+      <span class="section-label">Section 1</span>
+      <h2>The Structural Moment</h2>
+      <p>Dark pools crossed 50% of U.S. equity volume in early 2025,<sup>1</sup> a threshold that crystallizes the secular shift underway: as institutional liquidity migrates off-exchange, the residual flow on both lit and dark venues becomes increasingly adversely selected — precisely the dynamic MERIT was engineered to address. The question is not whether compatibility-based matching is the right answer to this problem; the academic and commercial evidence suggests it is. The question is whether Mosaic can capture a defensible share of block flow before the market consolidates further around the BIDS/Cboe axis.</p>
+
+      <div class="stat-row">
+        <div class="stat-cell">
+          <span class="stat-number">&gt;50%</span>
+          <span class="stat-label">Dark pool share of U.S. equity volume (2025)</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-number">96%</span>
+          <span class="stat-label">BIDS ADV growth, YoY (Jan 2026)</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-number">Apr&nbsp;2026</span>
+          <span class="stat-label">Mosaic MERIT launch date</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-number">6–12 mo</span>
+          <span class="stat-label">Critical window to establish performance evidence</span>
+        </div>
+      </div>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- Section 2 -->
+    <section class="section">
+      <span class="section-label">Section 2</span>
+      <h2>Competitive Threats — Ranked by Urgency</h2>
+
+      <!-- BIDS -->
+      <h3 class="threat-primary">BIDS Trading (Cboe) <span class="tag-primary">Primary Threat</span></h3>
+
+      <div class="callout">
+        <strong>Key Metric</strong>
+        January 2026 ADV of 241.3 million matched shares/day represents 96% year-over-year growth, with average block execution size of 23,604 shares across 520+ connected asset managers and 100+ broker-dealers. This is not a venue in a steady state.
+      </div>
+
+      <p>The BIDS growth trajectory is the most operationally urgent issue Mosaic faces. Cboe's distribution infrastructure, pre-existing clearing relationships, and institutional sales organization provide compounding advantages that are structurally difficult for a startup to replicate within any reasonable time horizon. BIDS inherits credibility by association — the same Cboe relationships that route equities, options, and futures flow give BIDS warm introductions to every major buy-side allocator.</p>
+
+      <p>BIDS Scorecard measures firm-up behavior: a narrow, pre-trade proxy for flow quality that tracks whether a counterparty completes its indicated trade. It is not the same as MERIT's post-trade workflow scoring, and it does not capture ongoing adverse selection impact on counterparties. But it is directionally correct, widely understood by portfolio traders, and — critically — it works well enough that institutions are comfortable acting on it. Mosaic should not underestimate "good enough."</p>
+
+      <p>The central strategic question: Can MERIT demonstrate measurable TCA improvement over BIDS before Cboe's engineering team adds a more sophisticated scoring layer to BIDS? Cboe has the infrastructure, the data, and the capital to close that gap. The window is narrow and it is probably already open.</p>
+
+      <!-- Luminex -->
+      <h3 class="threat-secondary">Luminex / LeveL Markets — Structural Peer, Now Vulnerable</h3>
+
+      <p>Luminex's April 2025 rebrand to LeveL Markets following its 2021 merger with LeveL ATS is the most underappreciated development in the institutional dark pool landscape. The merger combined Luminex's buy-side-only book with LeveL's sell-side network — which means the defining characteristic of the Luminex value proposition (a pool populated exclusively by institutional asset managers) is now diluted. Buy-side traders who chose Luminex precisely to avoid broker flow are now in a mixed pool.</p>
+
+      <p>The governance structure compounds this tension. Fidelity's approximate 60% founding stake creates a structural conflict: Fidelity's interests as a major institutional investor — with its own trading costs, OMS vendor relationships, and vendor negotiations — may not always align with maximizing pool quality for all buy-side participants. This is exactly the kind of governance ambiguity that sophisticated buy-side compliance teams notice.</p>
+
+      <div class="callout">
+        <strong>Opportunity Signal</strong>
+        Institutions that valued Luminex's buy-side purity may be actively reconsidering their venue mix post-merger. MERIT's compatibility model is structurally capable of absorbing mixed participant types — institutional investors and risk providers — while still delivering quality through scored access. This is a direct pitch to Luminex defectors who don't want to lose the quality promise alongside the brand.
+      </div>
+
+      <!-- IEX -->
+      <h3 class="threat-secondary">IEX — Philosophical Competitor, Commercial Complication</h3>
+
+      <p>IEX's July 2023 reversal on maker-taker rebates is worth examining carefully. After nearly a decade of building brand equity around structural integrity and investor protection, IEX introduced tiered rebates under competitive pressure from lit venue market share trends. This is mission drift, and it is exactly the kind of institutional credibility erosion that creates positioning opportunities for a venue with a coherent, stable philosophy.</p>
+
+      <p>The mechanics are different but the narrative overlap is real. IEX's CQI (Crumbling Quote Indicator) fires on quote instability — a pre-trade, binary signal. MERIT scores ongoing post-trade workflow impact — a continuous, post-trade dimension. These are different problems with different solutions, but IEX has spent ten years building brand equity around "doing right by investors," and that narrative competes directly with Mosaic's positioning. IEX remains privately held and independent — which is relevant context: it has maintained structural flexibility that a publicly traded or exchange-owned operator could not. Mosaic is also private, with strategic backing from Guggenheim and RBC aligned to market quality, which puts both venues in a similar governance position on this dimension.</p>
+
+      <!-- Liquidnet -->
+      <h3 class="threat-secondary">Liquidnet (TP ICAP) — Diminished but Persistent</h3>
+
+      <p>The January 2025 SEC enforcement action — $5 million penalty for Market Access Rule violations and failure to protect confidential subscriber trading information — is Liquidnet's second substantive enforcement action on the same issue (2014: $2 million for information protection failures). Two enforcement actions in eleven years on the singular issue that the entire Liquidnet value proposition depends on — "your OMS data is safe with us" — is a specific, documentable credibility problem. It is not fatal, but it should be on every compliance officer's desk.</p>
+
+      <p>Beyond enforcement, Liquidnet's natural block model is structurally constrained. It requires human negotiation, which limits fill rates and introduces latency that algorithmic block-sourcing is steadily displacing. As VWAP algos and conditional order systems improve at sourcing block liquidity programmatically, Liquidnet's value proposition for trades below the mega-block threshold weakens. The competitive threat from Liquidnet today is more about incumbency and relationships than product differentiation.</p>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- Section 3 -->
+    <section class="section">
+      <span class="section-label">Section 3</span>
+      <h2>What the Academic Evidence Says About MERIT's Model</h2>
+
+      <div class="callout">
+        <strong>Strongest Empirical Result (2025)</strong>
+        Brugler &amp; Comerton-Forde, "Differential Access to Dark Markets and Execution Outcomes," <em>Journal of Financial Economics</em> (2025): Using exogenous dark pool closures as natural experiments, the authors establish causal — not correlational — evidence that restricted-access dark pools produce measurably less information leakage, lower adverse selection risk, and fewer post-trade order imbalances versus open-access pools. This is the first rigorous causal identification of a result the industry has assumed but never proven. It directly validates the access-control logic underlying MERIT's compatibility segmentation.
+      </div>
+
+      <p>The theoretical foundation is equally well-grounded. Easley, López de Prado &amp; O'Hara (2012) developed VPIN — Volume-Synchronized Probability of Informed Trading — as a real-time toxicity measure derived from order flow imbalance. MERIT is conceptually downstream of VPIN: rather than measuring flow toxicity at the market level, MERIT scores it at the counterparty level and uses that signal as a matching input. The directional logic is identical; MERIT operationalizes it with institutional granularity.</p>
+
+      <p>Zhu (2014, <em>Review of Financial Studies</em>) identified the key theoretical tension: informed traders prefer lit markets, uninformed traders prefer dark pools — implying that dark pools can improve aggregate price discovery by concentrating informed flow on exchanges. MERIT's two-sided architecture implicitly acknowledges this. The Investor/Risk Provider segmentation is not merely a governance choice; it is an admission that some short-horizon flow belongs in the pool, provided it is priced correctly. The design challenge no competitor has solved is how to charge Risk Providers enough for their access to subsidize quality execution for Investors without pricing them out entirely. This is Mosaic's central product and pricing problem, and the academic literature does not resolve it.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Study</th>
+            <th>Year</th>
+            <th>Key Finding</th>
+            <th>MERIT Relevance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Brugler &amp; Comerton-Forde, JFE</td>
+            <td>2025</td>
+            <td>Causal evidence: access control reduces information leakage and adverse selection</td>
+            <td>Direct validation of MERIT compatibility segmentation</td>
+          </tr>
+          <tr>
+            <td>Easley, López de Prado &amp; O'Hara, <em>VPIN</em></td>
+            <td>2012</td>
+            <td>Order flow imbalance predicts toxicity in real time</td>
+            <td>Theoretical ancestor of counterparty-level MERIT scoring</td>
+          </tr>
+          <tr>
+            <td>Zhu, RFS</td>
+            <td>2014</td>
+            <td>Informed flow concentrates on lit venues; dark pools improve price discovery when uninformed-dominated</td>
+            <td>Frames the Investor/Risk Provider design challenge; no competitor has solved the pricing equilibrium</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- Section 4 -->
+    <section class="section">
+      <span class="section-label">Section 4</span>
+      <h2>Three Things None of the Competitors Do</h2>
+
+      <ol class="finding-list">
+        <li>
+          <div class="finding-content">
+            <strong>Post-trade workflow scoring as a matching criterion</strong>
+            Every competitor in this landscape measures either pre-trade behavior (exclusion lists, speed bumps, conditional access) or execution-moment behavior (BIDS firm-up rates, IEX CQI). None score the ongoing post-trade effect of a participant's workflow on its counterparties and feed that signal back as a matching input. This is MERIT's genuine structural innovation — and because it requires a sustained participant relationship to generate meaningful data, it creates switching costs that pre-trade metrics cannot.
+          </div>
+        </li>
+        <li>
+          <div class="finding-content">
+            <strong>Explicit two-sided segmentation with scored, earned access</strong>
+            Liquidnet and Luminex exclude Risk Providers entirely — a clean solution that limits pool depth and eliminates a class of participants with legitimate liquidity provision functions. BIDS admits Risk Providers but does not differentiate their access quality based on counterparty impact. IEX does not segment by participant type at all. Mosaic is the only venue that takes the position: Risk Providers belong in the ecosystem, but they earn and maintain their seat through a continuous MERIT score. The intellectual honesty of that design — acknowledging the real economics of block liquidity — is also a sales pitch to sophisticated buy-side heads of trading who have watched exclusion-only venues deliver thin books.
+          </div>
+        </li>
+        <li>
+          <div class="finding-content">
+            <strong>Non-broker-dealer, non-exchange governance with strategic flow backing</strong>
+            The governance map of institutional dark pools is dominated by conflicts. Liquidnet is owned by TP ICAP, an inter-dealer broker with its own flow interests. BIDS is owned by an exchange operator (Cboe) with shareholder earnings pressure and cross-venue competitive interests. Luminex's buy-side consortium structure is the cleanest governance in the peer set, but its commercial reach is constrained. IEX remains privately held and independent — the outlier in this group. Mosaic's strategic investors — Guggenheim and RBC — are both likely flow providers, providing revenue alignment without the conflicts of a broker-dealer operator or exchange parent. This is a compliance and governance pitch that will resonate at the CIO and head-of-trading level.
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- Section 5 -->
+    <section class="section">
+      <span class="section-label">Section 5</span>
+      <h2>Risks Mosaic Should Track</h2>
+
+      <div class="risk-box">
+        <span class="risk-label">Risk 1 — The Cboe/BIDS Flywheel</span>
+        <p>Cboe's distribution, clearing relationships, and technology investment compound BIDS' volume advantage every quarter. At 96% YoY growth, BIDS is not a mature competitor in harvest mode — it is in aggressive expansion. If BIDS extends its Scorecard functionality to incorporate post-trade counterparty metrics before Mosaic achieves the minimum volume threshold needed for MERIT scores to be statistically reliable, the differentiation window closes materially. The risk is not that BIDS builds a better MERIT — the risk is that BIDS builds something that is 70% as good as MERIT, on top of a network 50 times larger.</p>
+      </div>
+
+      <div class="risk-box">
+        <span class="risk-label">Risk 2 — The "Proven vs. Conceptual" Problem</span>
+        <p>Mosaic launched April 27, 2026. There is no published TCA data, no independent performance validation, no peer-reviewed back-test of MERIT score predictive power. Every pitch to a buy-side institution — particularly those with rigorous execution quality governance — will encounter a single question: <em>show me the data.</em> The first 6–12 months of published, independently audited performance metrics are the most important deliverable Mosaic can produce. Until that data exists, MERIT is a well-designed hypothesis. After it exists, MERIT is evidence. The gap between those two states is where competitors will attack.</p>
+      </div>
+    </section>
+
+    <hr class="section-rule">
+
+    <!-- Section 6 -->
+    <section class="section">
+      <span class="section-label">Section 6</span>
+      <h2>Recommended Monitoring</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Venue / Source</th>
+            <th>What to Watch</th>
+            <th>Frequency</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>BIDS / Cboe <span class="tag-primary">Priority</span></td>
+            <td>Volume growth rate, any Scorecard methodology enhancements, new participant announcements</td>
+            <td>Monthly</td>
+          </tr>
+          <tr>
+            <td>Luminex / LeveL</td>
+            <td>Buy-side defection post-merger, participant base composition changes, any reversal of sell-side integration</td>
+            <td>Quarterly</td>
+          </tr>
+          <tr>
+            <td>IEX</td>
+            <td>Further fee structure changes, CQI model updates, IEX Options launch progress</td>
+            <td>Quarterly</td>
+          </tr>
+          <tr>
+            <td>Liquidnet</td>
+            <td>Regulatory status (third enforcement action would be material), OMS integration changes, block size distribution</td>
+            <td>Quarterly</td>
+          </tr>
+          <tr>
+            <td>SEC ATS-N Filings <span class="tag-monitor">Monitor</span></td>
+            <td>Amendments across all venues — reveals rule and operational changes 30–60 days before public announcement</td>
+            <td>Monthly</td>
+          </tr>
+          <tr>
+            <td>FINRA ATS Data <span class="tag-monitor">Monitor</span></td>
+            <td>Dark pool market share by venue; leading indicator of BIDS flywheel acceleration or plateau</td>
+            <td>Monthly (FINRA publishes)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </div><!-- /doc-body -->
+
+  <!-- ══════════ FOOTER ══════════ -->
+  <footer class="doc-footer">
+    <span class="footer-label">Sources</span>
+    SEC Form ATS-N filings: Luminex CIK 1609177, Liquidnet CIK 1110644, BIDS Trading CIK 1368727.
+    Brugler &amp; Comerton-Forde, "Differential Access to Dark Markets and Execution Outcomes," <em>Journal of Financial Economics</em> (2025).
+    Easley, López de Prado &amp; O'Hara, "Flow Toxicity and Liquidity in a High Frequency World" (VPIN), <em>Review of Financial Studies</em> (2012).
+    Zhu, "Do Dark Pools Harm Price Discovery?," <em>Review of Financial Studies</em> (2014).
+    SEC enforcement actions: Liquidnet (Jan 2025, Jan 2014); BIDS/Cboe volume data January 2026.
+    Mosaic Platforms launch: BusinessWire (April 27, 2026).
+    Bloomberg dark pool market share data (2025).
+    &nbsp;&nbsp;|&nbsp;&nbsp; This document is prepared for internal review and does not constitute investment advice or a solicitation. &nbsp;&nbsp;|&nbsp;&nbsp; June 2026
+  </footer>
+
+</div><!-- /page-wrapper -->
+</body>
+</html>

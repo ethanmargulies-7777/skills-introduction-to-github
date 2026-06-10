@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATS Tracker — Mosaic Platforms</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:    #0a1628;
+  --card:    #0f1e38;
+  --card2:   #111e35;
+  --border:  #1e3060;
+  --row-alt: #0d1b32;
+  --cyan:    #00C6FF;
+  --green:   #00d68f;
+  --red:     #ff4757;
+  --yellow:  #ffd32a;
+  --blue:    #4e8df5;
+  --text:    #d8e4f5;
+  --muted:   #6b7fa8;
+  --white:   #f0f5ff;
+}
+
+body {
+  background: var(--navy);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+/* ===== LAYOUT ===== */
+.page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+/* ===== HEADER ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.hdr-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, #0d2550, #0a3070);
+  border: 1px solid var(--cyan);
+  border-radius: 5px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--cyan);
+  letter-spacing: -1px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.hdr-title { font-size: 20px; font-weight: 700; color: var(--cyan); letter-spacing: 0.06em; }
+.hdr-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+.live-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--green);
+  margin-right: 5px;
+  animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.hdr-right { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.7; }
+.hdr-right .ts { color: var(--cyan); font-variant-numeric: tabular-nums; }
+.hdr-right .badge-venues {
+  display: inline-block;
+  background: rgba(0,198,255,.12);
+  border: 1px solid rgba(0,198,255,.3);
+  border-radius: 3px;
+  padding: 1px 8px;
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ===== STATS ROW ===== */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--cyan);
+  border-radius: 6px;
+  padding: 16px 20px 14px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(0,198,255,.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* ===== SECTION ===== */
+.section { margin-bottom: 32px; }
+.section-hdr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.section-hdr h2 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+.section-rule { flex: 1; height: 1px; background: var(--border); }
+.section-count {
+  font-size: 10px;
+  color: var(--muted);
+  background: rgba(30,48,96,.6);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 7px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== TABLES ===== */
+.table-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: #0c1a30;
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr {
+  border-bottom: 1px solid rgba(30,48,96,.6);
+  transition: background .12s;
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:nth-child(even) { background: var(--row-alt); }
+tbody tr:hover { background: rgba(0,198,255,.05); }
+tbody td { padding: 9px 14px; vertical-align: middle; }
+.td-name  { font-weight: 500; color: var(--white); }
+.td-mono  { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+.td-num   { font-variant-numeric: tabular-nums; text-align: right; }
+.empty-cell {
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+  padding: 32px !important;
+}
+.muted-cell { color: var(--muted); font-style: italic; }
+
+/* ===== BADGES ===== */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge-blue   { background: rgba(78,141,245,.15);  color: var(--blue);   border: 1px solid rgba(78,141,245,.35); }
+.badge-yellow { background: rgba(255,211,42,.12);  color: var(--yellow); border: 1px solid rgba(255,211,42,.3); }
+.badge-red    { background: rgba(255,71,87,.12);   color: var(--red);    border: 1px solid rgba(255,71,87,.3); }
+.badge-gray   { background: rgba(107,127,168,.12); color: var(--muted);  border: 1px solid rgba(107,127,168,.25); }
+.mpid-badge {
+  display: inline-block;
+  background: rgba(0,198,255,.12);
+  border: 1px solid rgba(0,198,255,.3);
+  border-radius: 3px;
+  padding: 1px 7px;
+  color: var(--cyan);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.ticker-pill {
+  display: inline-block;
+  background: rgba(78,141,245,.12);
+  border: 1px solid rgba(78,141,245,.28);
+  border-radius: 3px;
+  padding: 1px 7px;
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ===== LINKS ===== */
+.view-link {
+  color: var(--cyan);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: .8;
+  transition: opacity .15s;
+}
+.view-link:hover { opacity: 1; text-decoration: underline; }
+
+/* ===== COLOR HELPERS ===== */
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+.chg {
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 4px;
+  opacity: .85;
+}
+
+/* ===== TWO-COL ROW ===== */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+
+/* ===== REGISTRY GRID ===== */
+.registry-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.registry-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  position: relative;
+  transition: border-color .15s, box-shadow .15s;
+}
+.registry-card:hover { border-color: rgba(0,198,255,.4); }
+.registry-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--white);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.registry-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.mosaic-tag {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: rgba(0,198,255,.15);
+  border: 1px solid rgba(0,198,255,.4);
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--cyan);
+  padding: 1px 6px;
+}
+
+/* ===== CHART CARD ===== */
+.chart-card {
+  background: #0f1e38;
+  border: 1px solid #1e3060;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  margin-top: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.footer a { color: var(--muted); text-decoration: none; }
+.footer a:hover { color: var(--cyan); }
+
+@media (max-width: 900px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .two-col   { grid-template-columns: 1fr; }
+  .registry-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+    <div class="hdr-left">
+      <div class="hdr-logo">ATS</div>
+      <div>
+        <div class="hdr-title">ATS TRACKER</div>
+        <div class="hdr-sub">Mosaic Platforms &nbsp;|&nbsp; Competitive Intelligence</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <div><span class="live-dot"></span>Live &nbsp;&mdash;&nbsp; <span class="ts">Last updated: 2026-06-10 19:28</span></div>
+      <div><span class="badge-venues">16 venues tracked</span></div>
+    </div>
+  </div>
+
+  <!-- ===== STATS ROW ===== -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">ATS Filers</div>
+      <div class="stat-value">16</div>
+      <div class="stat-sub">registered operators</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">EDGAR Filings (30d)</div>
+      <div class="stat-value">18</div>
+      <div class="stat-sub">SEC ATS-N submissions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">FINRA Volume Rows</div>
+      <div class="stat-value">390</div>
+      <div class="stat-sub">weekly trade data points</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Market Data Points</div>
+      <div class="stat-value">132</div>
+      <div class="stat-sub">daily OHLCV rows</div>
+    </div>
+  </div>
+
+  <!-- ===== EDGAR FILINGS SECTION ===== -->
+  <div class="section">
+    <div class="section-hdr">
+      <h2>EDGAR Filings</h2>
+      <div class="section-rule"></div>
+      <div class="section-count">18 rows &nbsp;/&nbsp; last 30 days</div>
+    </div>
+
+    <!-- Chart 3: Filing Activity by Day -->
+    <div class="chart-card" id="filingsChartCard" style="">
+      <canvas id="filingsChart" height="180"></canvas>
+    </div>
+
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ATS Name</th>
+              <th>Form Type</th>
+              <th>Filed Date</th>
+              <th>SEC Filing</th>
+            </tr>
+          </thead>
+          <tbody>
+
+          <tr>
+            <td class="td-name">JPBX</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-10</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234006" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">OneChronos ATS</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-10</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234011" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">OneChronos ATS</td>
+            <td><span class="badge badge-yellow">ATS-N/CA</span></td>
+            <td class="td-mono">2026-06-09</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234011" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">UBS ATS</td>
+            <td><span class="badge badge-yellow">ATS-N/CA</span></td>
+            <td class="td-mono">2026-06-09</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234015" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">BIDS ATS</td>
+            <td><span class="badge badge-red">ATS-N/W</span></td>
+            <td class="td-mono">2026-06-08</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234001" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">JPBX</td>
+            <td><span class="badge badge-yellow">ATS-N/CA</span></td>
+            <td class="td-mono">2026-06-08</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234006" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">Sigma X2</td>
+            <td><span class="badge badge-yellow">ATS-N/CA</span></td>
+            <td class="td-mono">2026-06-07</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234014" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">Mosaic ATS</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-06</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234010" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">OneChronos ATS</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-06</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234011" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">JPBX</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-05</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234006" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">UBS ATS</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-05</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234015" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">MS Pool</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-04</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234009" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">OneChronos ATS</td>
+            <td><span class="badge badge-yellow">ATS-N/CA</span></td>
+            <td class="td-mono">2026-06-04</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234011" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">JPBX</td>
+            <td><span class="badge badge-yellow">ATS-N/CA</span></td>
+            <td class="td-mono">2026-06-03</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234006" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">Sigma X2</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-03</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234014" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">BNPP Cortex ATS</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-02</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234002" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">JPBX</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-02</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234006" target="_blank" class="view-link">View →</a></td>
+          </tr>
+
+          <tr>
+            <td class="td-name">OneChronos ATS</td>
+            <td><span class="badge badge-blue">ATS-N/UA</span></td>
+            <td class="td-mono">2026-06-01</td>
+            <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234011" target="_blank" class="view-link">View →</a></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FILERS × VOLUME CROSSREF ===== -->
+  <div class="section">
+    <div class="section-hdr">
+      <h2>Recent Filers — Filing Activity vs. FINRA Volume</h2>
+      <div class="section-rule"></div>
+      <div class="section-count">30-day ATS-N filers only</div>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ATS Name</th>
+              <th>MPID</th>
+              <th>Parent</th>
+              <th style="text-align:center">Filings (30d)</th>
+              <th>Latest Filing</th>
+              <th style="text-align:right">Weekly Shares</th>
+              <th style="text-align:right">Weekly Trades</th>
+              <th style="text-align:right">WoW Change</th>
+              <th style="text-align:right">Mkt Share %</th>
+            </tr>
+          </thead>
+          <tbody>
+
+          <tr>
+            <td class="td-name">UBS ATS</td>
+            <td><span class="mpid-badge">UBSS</span></td>
+            <td><span class="ticker-pill">UBS</span></td>
+            <td style="text-align:center">2</td>
+            <td class="td-mono">2026-06-09</td>
+            <td class="td-num">1,529,476,032</td>
+            <td class="td-num">1,675,662</td>
+            <td class="td-num"><span class="neg">-10.4%</span></td>
+            <td class="td-num">33.8%</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">JPBX</td>
+            <td><span class="mpid-badge">JPBX</span></td>
+            <td><span class="ticker-pill">JPM</span></td>
+            <td style="text-align:center">5</td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num">1,247,552,525</td>
+            <td class="td-num">2,416,050</td>
+            <td class="td-num"><span class="pos">+37.6%</span></td>
+            <td class="td-num">11.0%</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">Sigma X2</td>
+            <td><span class="mpid-badge">SGMT</span></td>
+            <td><span class="ticker-pill">GS</span></td>
+            <td style="text-align:center">2</td>
+            <td class="td-mono">2026-06-07</td>
+            <td class="td-num">961,616,664</td>
+            <td class="td-num">1,810,812</td>
+            <td class="td-num"><span class="neg">-12.7%</span></td>
+            <td class="td-num">21.2%</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">MS Pool</td>
+            <td><span class="mpid-badge">MSCO</span></td>
+            <td><span class="ticker-pill">MS</span></td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-04</td>
+            <td class="td-num">273,749,192</td>
+            <td class="td-num">777,825</td>
+            <td class="td-num"><span class="pos">+8.0%</span></td>
+            <td class="td-num">12.1%</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">OneChronos ATS</td>
+            <td><span class="mpid-badge">OCXT</span></td>
+            <td>—</td>
+            <td style="text-align:center">5</td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num">146,221,445</td>
+            <td class="td-num">519,270</td>
+            <td class="td-num"><span class="neg">-44.1%</span></td>
+            <td class="td-num">1.3%</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">BIDS ATS</td>
+            <td><span class="mpid-badge">BIDS</span></td>
+            <td>—</td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-08</td>
+            <td class="td-num">79,970,402</td>
+            <td class="td-num">106,993</td>
+            <td class="td-num"><span class="pos">+3.6%</span></td>
+            <td class="td-num">3.5%</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">Mosaic ATS</td>
+            <td><span class="mpid-badge">MOSA</span></td>
+            <td>—</td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-06</td>
+            <td class="td-num">44,811,559</td>
+            <td class="td-num">54,700</td>
+            <td class="td-num"><span class="neg">-18.3%</span></td>
+            <td class="td-num">2.0%</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">BNPP Cortex ATS</td>
+            <td><span class="mpid-badge">BNPP</span></td>
+            <td><span class="ticker-pill">BNP.PA</span></td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-02</td>
+            <td class="td-num">14,197,071</td>
+            <td class="td-num">14,080</td>
+            <td class="td-num"><span class="neg">-20.5%</span></td>
+            <td class="td-num">0.6%</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TWO-COL: FINRA + MARKET DATA ===== -->
+  <div class="two-col">
+
+    <!-- FINRA Volume -->
+    <div class="section" style="margin-bottom:0">
+      <div class="section-hdr">
+        <h2>FINRA Volume — Top 10 by Shares</h2>
+        <div class="section-rule"></div>
+      </div>
+
+      <!-- Chart 1: FINRA Volume Bar Chart -->
+      <div class="chart-card" id="finraChartCard" style="">
+        <canvas id="finraChart" height="280"></canvas>
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>ATS</th>
+                <th>Symbol</th>
+                <th>Week Ending</th>
+                <th style="text-align:right">Shares</th>
+                <th style="text-align:right">Trades</th>
+                <th style="text-align:right">WoW Change</th>
+                <th style="text-align:right">Mkt Share %</th>
+              </tr>
+            </thead>
+            <tbody>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">MRK</td>
+            <td class="td-mono">2026-05-23</td>
+            <td class="td-num">59,619,512</td>
+            <td class="td-num">43,202</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">MSFT</td>
+            <td class="td-mono">2026-05-30</td>
+            <td class="td-num">59,028,171</td>
+            <td class="td-num">70,271</td>
+            <td class="td-num"><span class="pos">+0.1%</span></td>
+            <td class="td-num">2.6%</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">MSFT</td>
+            <td class="td-mono">2026-05-23</td>
+            <td class="td-num">58,987,638</td>
+            <td class="td-num">182,060</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">XOM</td>
+            <td class="td-mono">2026-05-16</td>
+            <td class="td-num">58,889,155</td>
+            <td class="td-num">75,888</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">CVX</td>
+            <td class="td-mono">2026-05-30</td>
+            <td class="td-num">58,599,400</td>
+            <td class="td-num">101,735</td>
+            <td class="td-num"><span class="pos">+1.6%</span></td>
+            <td class="td-num">2.6%</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">CVX</td>
+            <td class="td-mono">2026-05-23</td>
+            <td class="td-num">57,683,473</td>
+            <td class="td-num">40,968</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">XOM</td>
+            <td class="td-mono">2026-05-30</td>
+            <td class="td-num">56,860,404</td>
+            <td class="td-num">40,995</td>
+            <td class="td-num"><span class="pos">+437.9%</span></td>
+            <td class="td-num">2.5%</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">WMT</td>
+            <td class="td-mono">2026-05-16</td>
+            <td class="td-num">55,390,206</td>
+            <td class="td-num">59,367</td>
+            <td class="td-num"><span style="color:var(--muted)">—</span></td>
+            <td class="td-num">—</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">AVGO</td>
+            <td class="td-mono">2026-05-30</td>
+            <td class="td-num">53,079,738</td>
+            <td class="td-num">76,704</td>
+            <td class="td-num"><span class="pos">+62.8%</span></td>
+            <td class="td-num">2.3%</td>
+          </tr>
+
+          <tr style="border-left: 3px solid #00C6FF;">
+            <td class="td-name">UBS ATS</td>
+            <td class="td-mono">JPM</td>
+            <td class="td-mono">2026-05-30</td>
+            <td class="td-num">52,437,223</td>
+            <td class="td-num">66,460</td>
+            <td class="td-num"><span class="pos">+89.0%</span></td>
+            <td class="td-num">2.3%</td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Market Data -->
+    <div class="section" style="margin-bottom:0">
+      <div class="section-hdr">
+        <h2>Parent Company Market Data</h2>
+        <div class="section-rule"></div>
+        <div class="section-count">latest close</div>
+      </div>
+
+      <!-- Chart 2: Parent Stock Price Lines -->
+      <div class="chart-card" id="priceChartCard" style="">
+        <canvas id="priceChart" height="220"></canvas>
+      </div>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>ATS</th>
+                <th>Ticker</th>
+                <th>Date</th>
+                <th style="text-align:right">Close</th>
+                <th style="text-align:right">Volume</th>
+                <th style="text-align:right">Mkt Cap</th>
+              </tr>
+            </thead>
+            <tbody>
+
+          <tr>
+            <td class="td-name">BNPP Cortex ATS</td>
+            <td><span class="ticker-pill">BNP.PA</span></td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num"><span class="neg">$62.06</span> <span class="chg neg">-3.3%</span></td>
+            <td class="td-num">4,884,821</td>
+            <td class="td-num">$79B</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">POSIT</td>
+            <td><span class="ticker-pill">GS</span></td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num"><span class="pos">$552.59</span> <span class="chg pos">+7.4%</span></td>
+            <td class="td-num">3,279,569</td>
+            <td class="td-num">$171B</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">JPBX</td>
+            <td><span class="ticker-pill">JPM</span></td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num"><span class="pos">$245.95</span> <span class="chg pos">+8.4%</span></td>
+            <td class="td-num">11,472,592</td>
+            <td class="td-num">$649B</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">MS Pool</td>
+            <td><span class="ticker-pill">MS</span></td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num"><span class="pos">$132.74</span> <span class="chg pos">+10.6%</span></td>
+            <td class="td-num">24,553,152</td>
+            <td class="td-num">$195B</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">UBS ATS</td>
+            <td><span class="ticker-pill">UBS</span></td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num"><span class="pos">$33.22</span> <span class="chg pos">+4.0%</span></td>
+            <td class="td-num">3,110,380</td>
+            <td class="td-num">$57B</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">Virtu ATS</td>
+            <td><span class="ticker-pill">VIRT</span></td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num"><span class="neg">$28.96</span> <span class="chg neg">-0.1%</span></td>
+            <td class="td-num">934,844</td>
+            <td class="td-num">$6B</td>
+          </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.two-col -->
+
+  <!-- ===== ATS REGISTRY ===== -->
+  <div class="section">
+    <div class="section-hdr">
+      <h2>ATS Registry</h2>
+      <div class="section-rule"></div>
+      <div class="section-count">16 venues</div>
+    </div>
+    <div class="registry-grid">
+
+        <div class="registry-card">
+          
+          <div class="registry-name">BIDS ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">BIDS</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">BNPP Cortex ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">BNPP</span><span class="ticker-pill" style="margin-left:6px">BNP.PA</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">CBX</div>
+          <div class="registry-meta"><span class="mpid-badge">CBXE</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">H2O ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">H2OA</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">JPBX</div>
+          <div class="registry-meta"><span class="mpid-badge">JPBX</span><span class="ticker-pill" style="margin-left:6px">JPM</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">LeveL ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">LEVL</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">Luminex ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">LMXE</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">MS Pool</div>
+          <div class="registry-meta"><span class="mpid-badge">MSCO</span><span class="ticker-pill" style="margin-left:6px">MS</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">MatchIt</div>
+          <div class="registry-meta"><span class="mpid-badge">GSXE</span><span class="ticker-pill" style="margin-left:6px">GS</span></div>
+        </div>
+
+        <div class="registry-card" style="border-color:#00C6FF; box-shadow: 0 0 12px rgba(0,198,255,0.15);">
+          <div class="mosaic-tag">OUR ATS</div>
+          <div class="registry-name">Mosaic ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">MOSA</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">Negotiation ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">NXUS</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">OneChronos ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">OCXT</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">POSIT</div>
+          <div class="registry-meta"><span class="mpid-badge">ITGI</span><span class="ticker-pill" style="margin-left:6px">GS</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">Sigma X2</div>
+          <div class="registry-meta"><span class="mpid-badge">SGMT</span><span class="ticker-pill" style="margin-left:6px">GS</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">UBS ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">UBSS</span><span class="ticker-pill" style="margin-left:6px">UBS</span></div>
+        </div>
+
+        <div class="registry-card">
+          
+          <div class="registry-name">Virtu ATS</div>
+          <div class="registry-meta"><span class="mpid-badge">VIRT</span><span class="ticker-pill" style="margin-left:6px">VIRT</span></div>
+        </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="footer">
+    ATS Tracker &nbsp;&bull;&nbsp; Mosaic Platforms &nbsp;&bull;&nbsp;
+    Data: SEC EDGAR &middot; FINRA ATS Transparency &middot; Polygon.io<br>
+    <span style="font-size:10px">INTERNAL USE ONLY &nbsp;&mdash;&nbsp; 2026-06-10 19:28</span>
+  </div>
+
+</div><!-- /.page -->
+
+<script>
+// Chart.js global defaults
+Chart.defaults.color = '#6b7fa8';
+Chart.defaults.borderColor = '#1e3060';
+Chart.defaults.backgroundColor = 'transparent';
+
+// ---- Inline data ----
+var finraData    = {"labels": ["UBS ATS", "Sigma X2", "MS Pool", "JPBX", "POSIT", "MatchIt", "BIDS ATS", "Mosaic ATS", "OneChronos ATS", "Virtu ATS"], "values": [2299384886, 1448993657, 817235000, 675104500, 414277392, 322720011, 264089705, 148660263, 123790273, 58445233]};
+var priceData    = {"dates": ["2026-05-12", "2026-05-13", "2026-05-14", "2026-05-15", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-21", "2026-05-22", "2026-05-25", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-08", "2026-06-09", "2026-06-10"], "series": {"GS": [514.71, 517.57, 518.93, 529.74, 537.67, 544.95, 544.3, 539.97, 530.04, 538.65, 537.73, 536.88, 544.29, 542.81, 538.69, 540.12, 544.73, 549.68, 541.8, 542.27, 547.75, 552.59], "JPM": [226.95, 228.57, 228.88, 228.68, 228.39, 227.41, 224.05, 224.89, 228.84, 229.28, 232.83, 234.74, 238.15, 238.67, 238.16, 235.18, 233.22, 235.54, 241.92, 242.63, 242.2, 245.95], "MS": [120.05, 118.61, 119.43, 121.65, 119.99, 119.79, 118.84, 119.42, 121.6, 121.05, 121.58, 122.12, 121.95, 124.31, 126.9, 125.4, 126.98, 127.92, 128.79, 130.0, 132.84, 132.74], "UBS": [31.93, 31.48, 31.98, 31.56, 31.84, 32.03, 31.63, 32.05, 32.03, 32.42, 32.48, 32.31, 32.25, 32.13, 32.22, 32.37, 32.74, 32.77, 33.19, 33.22, 33.66, 33.22], "VIRT": [28.98, 28.84, 28.55, 28.62, 28.53, 28.69, 28.62, 28.64, 28.77, 29.17, 29.66, 29.41, 29.31, 28.79, 28.8, 28.82, 29.24, 29.28, 29.73, 29.01, 29.06, 28.96]}};
+var filingsData  = {"labels": ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09", "2026-06-10"], "values": [1, 2, 2, 2, 2, 2, 1, 2, 2, 2]};
+
+// ---- Helpers ----
+function fmtKM(v) {
+  if (v === null || v === undefined) return '';
+  if (v >= 1e9) return (v/1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(0) + 'K';
+  return String(v);
+}
+
+// ---- Chart 1: FINRA Volume Bar (horizontal) ----
+(function() {
+  var card = document.getElementById('finraChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!finraData.labels || finraData.labels.length === 0) { card.style.display = 'none'; return; }
+  var ctx = document.getElementById('finraChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: finraData.labels,
+      datasets: [{
+        label: 'Total Shares',
+        data: finraData.values,
+        backgroundColor: 'rgba(0, 198, 255, 0.7)',
+        borderColor: 'rgba(0, 198, 255, 0.9)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) { return ' ' + fmtKM(ctx.raw); }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e3060' },
+          ticks: {
+            callback: function(v) { return fmtKM(v); }
+          }
+        },
+        y: {
+          grid: { color: '#1e3060' }
+        }
+      }
+    }
+  });
+})();
+
+// ---- Chart 2: Parent Stock Price Lines ----
+(function() {
+  var card = document.getElementById('priceChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!priceData.dates || priceData.dates.length === 0) { card.style.display = 'none'; return; }
+  var colors = { GS: '#00C6FF', JPM: '#4e8df5', MS: '#00d68f', UBS: '#ffd32a', VIRT: '#ff6b81' };
+  var datasets = Object.keys(priceData.series).map(function(ticker) {
+    return {
+      label: ticker,
+      data: priceData.series[ticker],
+      borderColor: colors[ticker] || '#6b7fa8',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      pointRadius: 2,
+      tension: 0.3,
+      spanGaps: true
+    };
+  });
+  var ctx = document.getElementById('priceChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: { labels: priceData.dates, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ' ' + ctx.dataset.label + ': $' + (ctx.raw !== null ? ctx.raw.toFixed(2) : 'N/A');
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e3060' },
+          ticks: { maxTicksLimit: 8, maxRotation: 30 }
+        },
+        y: {
+          grid: { color: '#1e3060' },
+          ticks: {
+            callback: function(v) { return '$' + v; }
+          }
+        }
+      }
+    }
+  });
+})();
+
+// ---- Chart 3: Filing Activity by Day ----
+(function() {
+  var card = document.getElementById('filingsChartCard');
+  if (!card || card.style.display === 'none') return;
+  if (!filingsData.labels || filingsData.labels.length === 0) { card.style.display = 'none'; return; }
+  var ctx = document.getElementById('filingsChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: filingsData.labels,
+      datasets: [{
+        label: 'Filings',
+        data: filingsData.values,
+        backgroundColor: '#4e8df5',
+        borderColor: '#4e8df5',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e3060' },
+          ticks: { maxRotation: 45, maxTicksLimit: 12 }
+        },
+        y: {
+          grid: { color: '#1e3060' },
+          ticks: { stepSize: 1 }
+        }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
