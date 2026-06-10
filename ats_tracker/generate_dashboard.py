@@ -109,6 +109,42 @@ def query_finra_top10(conn: sqlite3.Connection) -> list:
         return []
 
 
+def query_filers_with_volume(conn: sqlite3.Connection) -> list:
+    """
+    Cross-reference: ATSs that filed an ATS-N in the past 30 days,
+    joined to their most recent week of FINRA volume.
+    """
+    from datetime import timedelta
+    cutoff = (date.today() - timedelta(days=30)).isoformat()
+    sql = """
+        SELECT
+            af.ats_name,
+            af.ats_mpid,
+            af.parent_ticker,
+            COUNT(DISTINCT afl.id)          AS filings_30d,
+            MAX(afl.filed_date)             AS latest_filing,
+            MAX(afl.form_type)              AS latest_form_type,
+            COALESCE(SUM(fv.shares_traded), 0) AS total_shares,
+            COALESCE(SUM(fv.trades), 0)        AS total_trades,
+            MAX(fv.week_ending)             AS latest_week
+        FROM ats_filers af
+        JOIN ats_filings afl ON afl.filer_id = af.id
+            AND afl.filed_date >= ?
+        LEFT JOIN finra_ats_volume fv ON fv.filer_id = af.id
+            AND fv.week_ending = (
+                SELECT MAX(fv2.week_ending)
+                FROM finra_ats_volume fv2
+                WHERE fv2.filer_id = af.id
+            )
+        GROUP BY af.id
+        ORDER BY total_shares DESC
+    """
+    try:
+        return rows_to_dicts(conn.execute(sql, (cutoff,)).fetchall())
+    except sqlite3.OperationalError:
+        return []
+
+
 def query_finra_count(conn: sqlite3.Connection) -> int:
     try:
         return conn.execute("SELECT COUNT(*) FROM finra_ats_volume").fetchone()[0]
@@ -313,6 +349,34 @@ def build_market_rows(rows: list) -> str:
     return "\n".join(out)
 
 
+def build_filers_volume_rows(rows: list) -> str:
+    if not rows:
+        return (
+            '<tr><td colspan="7" class="empty-cell">'
+            'No filing activity in the last 30 days</td></tr>'
+        )
+    out = []
+    for r in rows:
+        shares = r.get("total_shares") or 0
+        trades = r.get("total_trades") or 0
+        ticker = r.get("parent_ticker") or ""
+        ticker_html = f'<span class="ticker-pill">{ticker}</span>' if ticker else "—"
+        volume_html = fmt_shares(shares) if shares else '<span class="muted-cell">No FINRA data</span>'
+        trades_html = fmt_shares(trades) if trades else "—"
+        week_html   = r.get("latest_week") or "—"
+        out.append(f"""
+          <tr>
+            <td class="td-name">{r.get('ats_name') or '—'}</td>
+            <td><span class="mpid-badge">{r.get('ats_mpid') or '—'}</span></td>
+            <td>{ticker_html}</td>
+            <td style="text-align:center">{r.get('filings_30d') or 0}</td>
+            <td class="td-mono">{r.get('latest_filing') or '—'}</td>
+            <td class="td-num">{volume_html}</td>
+            <td class="td-num">{trades_html}</td>
+          </tr>""")
+    return "\n".join(out)
+
+
 def build_registry_cards(filers: list) -> str:
     cards = []
     for f in filers:
@@ -342,13 +406,15 @@ def build_html(
     filings: list,
     finra_top10: list,
     market_data: list,
+    filers_volume: list,
     stats: dict,
     generated_at: str,
 ) -> str:
-    filings_rows  = build_filings_rows(filings)
-    finra_rows    = build_finra_rows(finra_top10)
-    market_rows   = build_market_rows(market_data)
-    registry_html = build_registry_cards(filers)
+    filings_rows       = build_filings_rows(filings)
+    finra_rows         = build_finra_rows(finra_top10)
+    market_rows        = build_market_rows(market_data)
+    filers_volume_rows = build_filers_volume_rows(filers_volume)
+    registry_html      = build_registry_cards(filers)
 
     n_filers       = stats["n_filers"]
     n_filings      = stats["n_filings"]
@@ -560,6 +626,7 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
   font-style: italic;
   padding: 32px !important;
 }}
+.muted-cell {{ color: var(--muted); font-style: italic; }}
 
 /* ===== BADGES ===== */
 .badge {{
@@ -746,6 +813,35 @@ tbody td {{ padding: 9px 14px; vertical-align: middle; }}
     </div>
   </div>
 
+  <!-- ===== FILERS × VOLUME CROSSREF ===== -->
+  <div class="section">
+    <div class="section-hdr">
+      <h2>Recent Filers — Filing Activity vs. FINRA Volume</h2>
+      <div class="section-rule"></div>
+      <div class="section-count">30-day ATS-N filers only</div>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ATS Name</th>
+              <th>MPID</th>
+              <th>Parent</th>
+              <th style="text-align:center">Filings (30d)</th>
+              <th>Latest Filing</th>
+              <th style="text-align:right">Weekly Shares</th>
+              <th style="text-align:right">Weekly Trades</th>
+            </tr>
+          </thead>
+          <tbody>
+{filers_volume_rows}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== TWO-COL: FINRA + MARKET DATA ===== -->
   <div class="two-col">
 
@@ -844,16 +940,17 @@ def main():
         conn = get_conn(db_path)
 
     if conn:
-        filers      = query_filers(conn)
-        filings     = query_filings_30d(conn)
-        finra_top10 = query_finra_top10(conn)
-        market_data = query_market_data_latest(conn)
-        n_filings   = query_filings_count_30d(conn)
-        n_finra     = query_finra_count(conn)
-        n_market    = query_market_data_count(conn)
+        filers         = query_filers(conn)
+        filings        = query_filings_30d(conn)
+        finra_top10    = query_finra_top10(conn)
+        market_data    = query_market_data_latest(conn)
+        filers_volume  = query_filers_with_volume(conn)
+        n_filings      = query_filings_count_30d(conn)
+        n_finra        = query_finra_count(conn)
+        n_market       = query_market_data_count(conn)
         conn.close()
     else:
-        filers = filings = finra_top10 = market_data = []
+        filers = filings = finra_top10 = market_data = filers_volume = []
         n_filings = n_finra = n_market = 0
 
     stats = {
@@ -870,6 +967,7 @@ def main():
         filings=filings,
         finra_top10=finra_top10,
         market_data=market_data,
+        filers_volume=filers_volume,
         stats=stats,
         generated_at=generated_at,
     )

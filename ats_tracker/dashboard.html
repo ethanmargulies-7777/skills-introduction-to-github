@@ -203,6 +203,7 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
   font-style: italic;
   padding: 32px !important;
 }
+.muted-cell { color: var(--muted); font-style: italic; }
 
 /* ===== BADGES ===== */
 .badge {
@@ -334,7 +335,7 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
       </div>
     </div>
     <div class="hdr-right">
-      <div><span class="live-dot"></span>Live &nbsp;&mdash;&nbsp; <span class="ts">Last updated: 2026-06-10 17:48</span></div>
+      <div><span class="live-dot"></span>Live &nbsp;&mdash;&nbsp; <span class="ts">Last updated: 2026-06-10 17:53</span></div>
       <div><span class="badge-venues">16 venues tracked</span></div>
     </div>
   </div>
@@ -528,6 +529,124 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
             <td><span class="badge badge-blue">ATS-N/UA</span></td>
             <td class="td-mono">2026-06-01</td>
             <td><a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001234011" target="_blank" class="view-link">View →</a></td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FILERS × VOLUME CROSSREF ===== -->
+  <div class="section">
+    <div class="section-hdr">
+      <h2>Recent Filers — Filing Activity vs. FINRA Volume</h2>
+      <div class="section-rule"></div>
+      <div class="section-count">30-day ATS-N filers only</div>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ATS Name</th>
+              <th>MPID</th>
+              <th>Parent</th>
+              <th style="text-align:center">Filings (30d)</th>
+              <th>Latest Filing</th>
+              <th style="text-align:right">Weekly Shares</th>
+              <th style="text-align:right">Weekly Trades</th>
+            </tr>
+          </thead>
+          <tbody>
+
+          <tr>
+            <td class="td-name">JPBX</td>
+            <td><span class="mpid-badge">JPBX</span></td>
+            <td><span class="ticker-pill">JPM</span></td>
+            <td style="text-align:center">7</td>
+            <td class="td-mono">2026-06-12</td>
+            <td class="td-num">1,746,573,535</td>
+            <td class="td-num">3,382,470</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">UBS ATS</td>
+            <td><span class="mpid-badge">UBSS</span></td>
+            <td><span class="ticker-pill">UBS</span></td>
+            <td style="text-align:center">2</td>
+            <td class="td-mono">2026-06-09</td>
+            <td class="td-num">1,529,476,032</td>
+            <td class="td-num">1,675,662</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">Sigma X2</td>
+            <td><span class="mpid-badge">SGMT</span></td>
+            <td><span class="ticker-pill">GS</span></td>
+            <td style="text-align:center">2</td>
+            <td class="td-mono">2026-06-07</td>
+            <td class="td-num">961,616,664</td>
+            <td class="td-num">1,810,812</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">MS Pool</td>
+            <td><span class="mpid-badge">MSCO</span></td>
+            <td><span class="ticker-pill">MS</span></td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-04</td>
+            <td class="td-num">273,749,192</td>
+            <td class="td-num">777,825</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">OneChronos ATS</td>
+            <td><span class="mpid-badge">OCXT</span></td>
+            <td>—</td>
+            <td style="text-align:center">5</td>
+            <td class="td-mono">2026-06-10</td>
+            <td class="td-num">146,221,445</td>
+            <td class="td-num">519,270</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">BIDS ATS</td>
+            <td><span class="mpid-badge">BIDS</span></td>
+            <td>—</td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-08</td>
+            <td class="td-num">79,970,402</td>
+            <td class="td-num">106,993</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">Mosaic ATS</td>
+            <td><span class="mpid-badge">MOSA</span></td>
+            <td>—</td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-06</td>
+            <td class="td-num">44,811,559</td>
+            <td class="td-num">54,700</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">BNPP Cortex ATS</td>
+            <td><span class="mpid-badge">BNPP</span></td>
+            <td><span class="ticker-pill">BNP.PA</span></td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-02</td>
+            <td class="td-num">14,197,071</td>
+            <td class="td-num">14,080</td>
+          </tr>
+
+          <tr>
+            <td class="td-name">CBX</td>
+            <td><span class="mpid-badge">CBXE</span></td>
+            <td>—</td>
+            <td style="text-align:center">1</td>
+            <td class="td-mono">2026-06-11</td>
+            <td class="td-num">9,116,276</td>
+            <td class="td-num">10,958</td>
           </tr>
           </tbody>
         </table>
@@ -837,7 +956,7 @@ tbody td { padding: 9px 14px; vertical-align: middle; }
   <div class="footer">
     ATS Tracker &nbsp;&bull;&nbsp; Mosaic Platforms &nbsp;&bull;&nbsp;
     Data: SEC EDGAR &middot; FINRA ATS Transparency &middot; Polygon.io<br>
-    <span style="font-size:10px">INTERNAL USE ONLY &nbsp;&mdash;&nbsp; 2026-06-10 17:48</span>
+    <span style="font-size:10px">INTERNAL USE ONLY &nbsp;&mdash;&nbsp; 2026-06-10 17:53</span>
   </div>
 
 </div><!-- /.page -->
