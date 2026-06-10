@@ -17,9 +17,13 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-SCRIPT_DIR = Path(__file__).parent
+SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT   = SCRIPT_DIR.parent
-DB_PATH     = os.environ.get("DB_PATH", str(SCRIPT_DIR / "ats_tracker.db"))
+# Check both the ats_tracker/ subfolder and the repo root for the db
+_default_db = SCRIPT_DIR / "ats_tracker.db"
+if not _default_db.exists():
+    _default_db = REPO_ROOT / "ats_tracker" / "ats_tracker.db"
+DB_PATH     = os.environ.get("DB_PATH", str(_default_db))
 OUT_PATH    = SCRIPT_DIR / "dashboard.html"
 ROOT_COPY   = REPO_ROOT  / "ats_dashboard.html"
 
