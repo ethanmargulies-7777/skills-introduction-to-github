@@ -19,6 +19,7 @@ A GitHub Skills exercise repository — a structured tutorial teaching GitHub ba
 | `/mosaic-context` | Mosaic Platforms company context, MERIT system, John Cosenza |
 | `/institutional-trading` | Market microstructure, order flow, execution, regulations |
 | `/mosaic-analyst` | Data analytics, TCA, Python/kdb+ tooling, research for the internship role |
+| `/mosaic-visual-design` | Marketing design system — McCandless method × Mosaic brand, MERIT visuals, pitch assets |
 | `/token-efficiency` | Concise response mode |
 | `/run-skills-introduction-to-github` | Verify exercise repo structure via smoke script |
 
